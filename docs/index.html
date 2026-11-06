@@ -586,6 +586,7 @@ const TABS=[
   {id:"suppliers",label:"Fornecedores",ic:"factory"},
   {id:"mercado",label:"Mercado ao vivo",ic:"trending-up"},
   {id:"ranking",label:"Ranking NCM",ic:"list-ordered"},
+  {id:"classificacao",label:"Classificação NCM",ic:"tags"},
   {id:"calc",label:"Custo & viabilidade",ic:"calculator"},
   {id:"import",label:"Passo a passo",ic:"route"},
   {id:"intel",label:"Inteligência & DD",ic:"radar"},
@@ -1078,8 +1079,97 @@ function drawRanking(out){
   applyGlossary(out);icons();
 }
 
+/* ============================ CLASSIFICAÇÃO NCM ============================ */
+const NCM_PRODUCTS=[
+  {id:"handbag",label:"Bolsa de mão / tiracolo / ombro",ic:"shopping-bag"},
+  {id:"backpack",label:"Mochila / bolsa de viagem / sacola",ic:"backpack"},
+  {id:"case",label:"Estojo escolar / técnico / nécessaire",ic:"pencil-case"},
+  {id:"wallet",label:"Carteira / porta-moedas",ic:"wallet"},
+];
+const NCM_MATERIALS=[
+  {id:"textile",label:"Têxtil / nylon / poliéster"},
+  {id:"plastic",label:"Plástico / PU / PVC (couro sintético)"},
+  {id:"leather",label:"Couro natural ou reconstituído"},
+];
+const NCM_MAP={
+  handbag:{textile:"42022220",plastic:"42022210",leather:"42022100"},
+  backpack:{textile:"42029200",plastic:"42029200",leather:"42029100"},
+  case:{textile:"42029200",plastic:"42029200",leather:"42029100"},
+  wallet:{textile:"42023200",plastic:"42023200",leather:"42023100"},
+};
+const NCM_DESC={
+  "42022220":"Bolsas, mesmo com tiracolo, com a superfície exterior de matérias têxteis.",
+  "42022210":"Bolsas, mesmo com tiracolo, com a superfície exterior de folhas de plástico.",
+  "42022100":"Bolsas, mesmo com tiracolo, com a superfície exterior de couro natural ou reconstituído.",
+  "42029200":"Outros artefatos (mochilas, sacolas de viagem, estojos) com superfície exterior de folhas de plástico ou de matérias têxteis.",
+  "42029100":"Outros artefatos (mochilas, bolsas de viagem, estojos) com superfície exterior de couro natural ou reconstituído.",
+  "42023200":"Artigos de bolso ou de bolsa (carteiras, porta-moedas) com superfície exterior de folhas de plástico ou de matérias têxteis.",
+  "42023100":"Artigos de bolso ou de bolsa (carteiras, porta-moedas) com superfície exterior de couro natural ou reconstituído.",
+};
+const NCM_TAX={ii:35,ipi:6.5,pis:2.1,cofins:9.65,icms:18};
+const fmtNcm=n=>{n=String(n||'').replace(/\D/g,'');return n.length===8?n.slice(0,4)+'.'+n.slice(4,6)+'.'+n.slice(6,8):n;};
+let clsP='handbag',clsM='textile';
+VIEWS.classificacao=()=>{
+  const w=el('div','panel-view');
+  w.appendChild(lead("tags","Classificação fiscal","A NCM correta de cada item da Blendibox",
+    "Escolha o tipo de produto e o material da superfície externa — a NCM sai automaticamente. Regra de ouro: é o material de fora que define o código, não o preço nem o imposto."));
+
+  w.appendChild(banner('warn','triangle-alert','Classifique sempre pelas <b>características físicas</b> do produto, nunca por qual paga menos imposto — classificação incorreta gera multa da Receita e da SEFAZ. Isto é orientação de apoio; confirme a NCM final com seu despachante/contador.'));
+
+  const grid=el('div','calc');
+  const inp=el('div','calc-inputs card pad');
+  inp.innerHTML=`<div style="font-family:var(--f-display);font-weight:600;font-size:13px;color:var(--cyan)">Classificador</div>
+    <label class="fld"><span>Tipo de produto</span><select id="clsP">${NCM_PRODUCTS.map(p=>`<option value="${p.id}" ${clsP===p.id?'selected':''}>${esc(p.label)}</option>`).join('')}</select></label>
+    <label class="fld"><span>Material da superfície externa</span><select id="clsM">${NCM_MATERIALS.map(m=>`<option value="${m.id}" ${clsM===m.id?'selected':''}>${esc(m.label)}</option>`).join('')}</select></label>
+    <div style="font-size:11.5px;color:var(--ink-dim);margin-top:4px">Couro sintético (PU/PVC) conta como <b>plástico</b>. O que vale é a superfície que aparece por fora.</div>`;
+  grid.appendChild(inp);
+  const out=el('div','card pad');out.id='clsOut';grid.appendChild(out);
+  w.appendChild(grid);
+
+  // tabela de referência
+  const tbl=el('div','card pad');
+  let rows='';
+  NCM_PRODUCTS.forEach(p=>{rows+=`<tr><td style="font-weight:600">${esc(p.label)}</td>`+NCM_MATERIALS.map(m=>`<td class="mono">${esc(fmtNcm(NCM_MAP[p.id][m.id]))}</td>`).join('')+`</tr>`;});
+  tbl.innerHTML=`<h3 style="font-size:15px;margin-bottom:10px;display:flex;align-items:center;gap:8px">${ic('table')} Tabela de referência (produto × material)</h3>
+    <div style="overflow-x:auto"><table class="taxtable"><thead><tr><th>Produto</th><th>Têxtil/nylon</th><th>Plástico/PU</th><th>Couro</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  w.appendChild(tbl);
+
+  // regras
+  const rules=el('div','card pad');
+  rules.innerHTML=`<h3 style="font-size:15px;margin-bottom:8px;display:flex;align-items:center;gap:8px">${ic('book-open')} Regras que você precisa saber</h3>
+    <ul style="margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-soft);line-height:1.7">
+      <li>O <b>material da superfície externa</b> define o código: têxtil, plástico/PU ou couro mudam a NCM.</li>
+      <li><b>Bolsa de mão</b> tem código próprio (4202.21/.22); <b>mochila, bolsa de viagem e estojo</b> caem em "outros" (4202.91/.92).</li>
+      <li>Em <b>4202.92.00</b>, tecido e plástico ficam no <b>mesmo</b> código; só o couro muda (vai para 4202.91.00).</li>
+      <li><b>Couro sintético (PU/PVC)</b> é tratado como plástico — ex.: bolsa de mão de PU é <b>4202.22.10</b>.</li>
+      <li>São Paulo prevê <b>redução de base de ICMS</b> para bolsas (Art. 30, Anexo II, RICMS/SP); há decisão da SEFAZ‑SP aceitando para <b>bolsas térmicas de nylon</b> (4202.22.20, RC 29562/2024). Confirme o enquadramento do seu item com o contador.</li>
+    </ul>`;
+  w.appendChild(rules);
+
+  const redraw=()=>drawCls(out);
+  inp.querySelector('#clsP').onchange=e=>{clsP=e.target.value;redraw();};
+  inp.querySelector('#clsM').onchange=e=>{clsM=e.target.value;redraw();};
+  drawCls(out);
+  return w;
+};
+function drawCls(out){
+  const code=NCM_MAP[clsP][clsM];const desc=NCM_DESC[code]||'';
+  const chip=(l,v)=>`<div class="rtile" style="padding:10px 12px"><div class="l">${l}</div><div class="v" style="font-size:16px">${v}</div></div>`;
+  out.innerHTML=`<div style="font-family:var(--f-display);font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--cyan)">NCM recomendada</div>
+    <div style="font-family:var(--f-display);font-size:30px;font-weight:700;margin:4px 0 2px">${esc(fmtNcm(code))}</div>
+    <div style="font-size:13px;color:var(--ink-soft);margin-bottom:14px">${esc(desc)}</div>
+    <div class="result-tiles" style="grid-template-columns:repeat(3,1fr)">
+      ${chip('II (importação)',NCM_TAX.ii+'%')}${chip('IPI',NCM_TAX.ipi+'%')}${chip('ICMS SP',NCM_TAX.icms+'%')}
+      ${chip('PIS‑imp.',NCM_TAX.pis+'%')}${chip('COFINS‑imp.',NCM_TAX.cofins+'%')}
+      <div class="rtile" style="padding:10px 12px"><div class="l">Conferir dados</div><button class="btn primary sm" id="clsMkt" style="margin-top:4px">${ic('trending-up')} Ver no Mercado</button></div>
+    </div>
+    <div style="font-size:11px;color:var(--ink-dim);margin-top:10px">Tributos de referência para a família 4202 (fontes públicas, ~2026). As alíquotas reais dependem da NCM exata, do estado e de regimes especiais — confirme com seu despachante.</div>`;
+  const b=out.querySelector('#clsMkt');if(b)b.onclick=()=>{mkt.ncm=code;mkt.data=null;go('mercado');};
+  icons();
+}
+
 /* ============================ CALCULADORA ============================ */
-const CALC_DEF={fob:6.80,qty:1000,freight:1800,insurance:120,rate:5.40,ii:20,ipi:0,pis:2.10,cofins:9.65,icms:18,afrmm:8,siscomex:154.23,desp:2500,markup:2.8};
+const CALC_DEF={fob:6.80,qty:1000,freight:1800,insurance:120,rate:5.40,ii:35,ipi:6.5,pis:2.10,cofins:9.65,icms:18,afrmm:8,siscomex:154.23,desp:2500,markup:2.8};
 let calc=Object.assign({},CALC_DEF);
 try{const sv=JSON.parse(localStorage.getItem('bb_calc')||'null');if(sv)calc=Object.assign({},CALC_DEF,sv);}catch(e){}
 VIEWS.calc=()=>{

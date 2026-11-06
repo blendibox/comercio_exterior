@@ -585,6 +585,7 @@ const TABS=[
   {id:"hubs",label:"Polos & cidades",ic:"map-pin"},
   {id:"suppliers",label:"Fornecedores",ic:"factory"},
   {id:"mercado",label:"Mercado ao vivo",ic:"trending-up"},
+  {id:"ranking",label:"Ranking NCM",ic:"list-ordered"},
   {id:"calc",label:"Custo & viabilidade",ic:"calculator"},
   {id:"import",label:"Passo a passo",ic:"route"},
   {id:"intel",label:"Inteligência & DD",ic:"radar"},
@@ -924,7 +925,7 @@ VIEWS.mercado=()=>{
   }
   const form=el('div','card pad');
   form.innerHTML=`<div class="mkt-form">
-    <label class="fld"><span>NCM (8 dígitos)</span><input id="mkNcm" value="${esc(mkt.ncm)}" placeholder="42022220"></label>
+    <label class="fld"><span>NCM (com ou sem pontos)</span><input id="mkNcm" value="${esc(mkt.ncm)}" placeholder="4202.22.20"></label>
     <label class="fld"><span>Fluxo</span><select id="mkFlow"><option value="import" ${mkt.flow==='import'?'selected':''}>Importação</option><option value="export" ${mkt.flow==='export'?'selected':''}>Exportação</option></select></label>
     <label class="fld"><span>De (ano)</span><input id="mkFrom" type="number" value="${mkt.fromY}" min="1997" max="2025"></label>
     <label class="fld"><span>Até (ano)</span><input id="mkTo" type="number" value="${mkt.toY}" min="1997" max="2025"></label>
@@ -973,8 +974,11 @@ function drawMkt(out){
    ["globe",(chinaShare*100).toFixed(0)+"%","Participação da China"]].forEach(([k,v,l])=>{
     const t=el('div','rtile');t.innerHTML=`<div class="l">${ic(k)} ${l}</div><div class="v">${v}</div>`;tiles.appendChild(t);
   });
+  const fmtNcm=n=>{n=String(n||'').replace(/\D/g,'');return n.length===8?n.slice(0,4)+'.'+n.slice(4,6)+'.'+n.slice(6,8):n;};
   const head=el('div','card pad');
-  head.innerHTML=`<div style="font-size:13px;color:var(--ink-soft);margin-bottom:12px">NCM <b style="color:var(--ink)">${esc(mkt.ncm)}</b> — ${esc(desc)}. O Brasil ${flowLabel} de <b class="china">${esc(countries[0]?countries[0].c:'—')}</b> como principal origem.</div>`;
+  head.innerHTML=`<div style="font-family:var(--f-display);font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--cyan)">NCM ${esc(fmtNcm(mkt.ncm))}</div>
+    <div style="font-family:var(--f-display);font-size:18px;font-weight:700;line-height:1.3;margin:5px 0 10px">${esc(desc||'Descrição indisponível para esta NCM')}</div>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px">No período ${esc(mkt.fromY)}–${esc(mkt.toY)}, o Brasil ${flowLabel} principalmente de <b class="china">${esc(countries[0]?countries[0].c:'—')}</b>.</div>`;
   head.appendChild(tiles);
   out.appendChild(head);
 
@@ -994,6 +998,83 @@ function drawMkt(out){
   tbox.appendChild(rows);
   tbox.appendChild(el('div','foot',`Fonte: Comex Stat / MDIC (dados oficiais). Valores FOB em US$. Atualizado via cache do Worker (6h).`));
   out.appendChild(tbox);
+  applyGlossary(out);icons();
+}
+
+/* ============================ RANKING NCM ============================ */
+const BAG_NCMS=[
+  {code:"42022220",label:"Bolsas — superfície têxtil (puffer)"},
+  {code:"42022210",label:"Bolsas — superfície de plástico"},
+  {code:"42022100",label:"Bolsas — couro natural"},
+  {code:"42022900",label:"Bolsas — outras"},
+  {code:"42029200",label:"Sacos de viagem / mochilas — plástico ou têxtil"},
+  {code:"42021200",label:"Malas e maletas — plástico ou têxtil"},
+  {code:"42023200",label:"Carteiras / artigos de bolso — plástico ou têxtil"},
+  {code:"42029900",label:"Outros artigos do tipo 4202"},
+];
+let rank={fromY:'2024',toY:'2025',rows:null,loading:false,err:null};
+VIEWS.ranking=()=>{
+  const w=el('div','panel-view');
+  w.appendChild(lead("list-ordered","Ranking · bolsas (família 4202)","Quais bolsas o Brasil mais importa da China",
+    "Comparação das NCMs de bolsas pelo valor importado da China no período. Mostra onde está o maior volume e o preço médio de cada categoria."));
+  if(!CONFIGURED){ w.appendChild(banner('warn','triangle-alert','Configure o Worker (<code>window.BB_CONFIG.workerUrl</code>) para carregar os dados do Comex Stat.')); return w; }
+  const form=el('div','card pad');
+  form.innerHTML=`<div class="filters">
+    <label class="fld"><span>De (ano)</span><input id="rkFrom" type="number" value="${rank.fromY}" min="1997" max="2025"></label>
+    <label class="fld"><span>Até (ano)</span><input id="rkTo" type="number" value="${rank.toY}" min="1997" max="2025"></label>
+    <button class="btn primary" id="rkGo">${ic('refresh-cw')} Gerar ranking</button></div>
+    <div style="font-size:11.5px;color:var(--ink-dim);margin-top:8px">Consulta ${BAG_NCMS.length} NCMs da família 4202 (bolsas, mochilas, malas, carteiras) e ordena pelo valor importado da China.</div>`;
+  w.appendChild(form);
+  const out=el('div');out.id='rkOut';w.appendChild(out);
+  drawRanking(out);
+  form.querySelector('#rkGo').onclick=()=>{rank.fromY=form.querySelector('#rkFrom').value;rank.toY=form.querySelector('#rkTo').value;runRanking(out);};
+  return w;
+};
+async function runRanking(out){
+  rank.loading=true;rank.err=null;rank.rows=null;drawRanking(out);
+  try{
+    const results=await Promise.all(BAG_NCMS.map(async n=>{
+      try{
+        const r=await fetch(WORKER+`/api/comexstat?flow=import&ncm=${n.code}&from=${rank.fromY}-01&to=${rank.toY}-12`);
+        if(!r.ok) throw 0;
+        const j=await r.json();const list=j.list||[];
+        let chinaFob=0,chinaKg=0,totFob=0,desc='';
+        list.forEach(x=>{totFob+=x.fob;if(!desc)desc=x.descricao;if(x.country==='China'){chinaFob+=x.fob;chinaKg+=x.kg;}});
+        return {code:n.code,label:n.label,desc:desc||n.label,chinaFob,chinaKg,totFob,share:totFob?chinaFob/totFob:0,price:chinaKg?chinaFob/chinaKg:0};
+      }catch(e){return {code:n.code,label:n.label,desc:n.label,chinaFob:0,chinaKg:0,totFob:0,share:0,price:0};}
+    }));
+    results.sort((a,b)=>b.chinaFob-a.chinaFob);
+    rank.rows=results;
+  }catch(e){rank.err='Falha ao gerar o ranking. Verifique a conexão/Worker.';}
+  rank.loading=false;drawRanking(out);
+}
+function drawRanking(out){
+  out.innerHTML='';
+  if(rank.loading){out.appendChild(el('div','card pad',`<span class="spin"></span> consultando ${BAG_NCMS.length} NCMs no Comex Stat...`));icons();return;}
+  if(rank.err){out.appendChild(banner('warn','triangle-alert',esc(rank.err)));icons();return;}
+  if(!rank.rows){out.appendChild(el('div','banner info',`${ic('info')}<span>Clique em <b>Gerar ranking</b> para comparar as NCMs de bolsas pelo valor importado da China.</span>`));icons();return;}
+  const fmtNcm=n=>{n=String(n||'').replace(/\D/g,'');return n.length===8?n.slice(0,4)+'.'+n.slice(4,6)+'.'+n.slice(6,8):n;};
+  const rows=rank.rows;const totChina=rows.reduce((a,r)=>a+r.chinaFob,0);const max=Math.max(...rows.map(r=>r.chinaFob),1);
+  const head=el('div','card pad');
+  head.innerHTML=`<div style="font-size:13px;color:var(--ink-soft)">No período ${esc(rank.fromY)}–${esc(rank.toY)}, o Brasil importou <b class="china">${usdC(totChina)}</b> em bolsas da China (soma das NCMs). Categoria líder: <b style="color:var(--ink)">${esc(rows[0]?fmtNcm(rows[0].code):'—')}</b> — ${esc(rows[0]?rows[0].desc:'')}.</div>`;
+  out.appendChild(head);
+  const box=el('div','card pad');box.innerHTML=`<h3 style="font-size:15px;margin-bottom:10px;display:flex;align-items:center;gap:8px">${ic('list-ordered')} NCMs de bolsas — importação da China</h3>`;
+  rows.forEach((r,i)=>{
+    const row=el('div');row.style.cssText='display:grid;grid-template-columns:28px 1fr 130px;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)';
+    const medal=i<3?['#ffd24a','#c9d2e3','#e08a4a'][i]:'var(--ink-dim)';
+    row.innerHTML=`<div style="font-family:var(--f-display);font-weight:700;color:${medal};font-size:16px">${i+1}</div>
+      <div style="min-width:0">
+        <div style="font-family:var(--f-display);font-weight:600;font-size:13.5px">${esc(fmtNcm(r.code))} <span style="color:var(--cyan)">·</span> ${esc(r.desc)}</div>
+        <div class="bar-track" style="margin-top:6px"><div class="bar-fill" style="width:${(r.chinaFob/max*100).toFixed(1)}%"></div></div>
+      </div>
+      <div style="text-align:right">
+        <div class="mono" style="font-family:var(--f-display);font-weight:700">${usdC(r.chinaFob)}</div>
+        <div style="font-size:11px;color:var(--ink-dim)">US$ ${r.price.toLocaleString('pt-BR',{maximumFractionDigits:2})}/kg · China ${(r.share*100).toFixed(0)}%</div>
+      </div>`;
+    box.appendChild(row);
+  });
+  box.appendChild(el('div','foot',`Fonte: Comex Stat / MDIC. "China %" = participação da China no total importado daquela NCM. Para o detalhe por país, abra a NCM na aba Mercado ao vivo.`));
+  out.appendChild(box);
   applyGlossary(out);icons();
 }
 

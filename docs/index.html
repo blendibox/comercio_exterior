@@ -588,6 +588,7 @@ const TABS=[
   {id:"ranking",label:"Ranking NCM",ic:"list-ordered"},
   {id:"classificacao",label:"Classificação NCM",ic:"tags"},
   {id:"regime",label:"Regime tributário",ic:"scale"},
+  {id:"holding",label:"Holding / Aluguéis",ic:"building-2"},
   {id:"calc",label:"Custo & viabilidade",ic:"calculator"},
   {id:"import",label:"Passo a passo",ic:"route"},
   {id:"intel",label:"Inteligência & DD",ic:"radar"},
@@ -1268,6 +1269,93 @@ function drawReg(out){
   out.appendChild(cards);
   if(reg.venda==='atacado') out.appendChild(banner('info','badge-check','<b>Atacado em SP:</b> redução de base aplicada — ICMS a <b>12%</b> no Presumido e no Lucro Real. O <b>Simples não aproveita</b> esse benefício (continua pela tabela do DAS), e a redução não vale para venda a consumidor final.'));
   out.appendChild(ins);out.appendChild(tbl);out.appendChild(sp);
+  applyGlossary(out);icons();
+}
+
+/* ============================ HOLDING / ALUGUÉIS ============================ */
+const IRPF_TABLE=[
+  {upTo:2259.20,rate:0,ded:0},{upTo:2826.65,rate:0.075,ded:169.44},{upTo:3751.05,rate:0.15,ded:381.44},
+  {upTo:4664.68,rate:0.225,ded:662.77},{upTo:Infinity,rate:0.275,ded:896.00},
+];
+function irpfMensal(base){for(const f of IRPF_TABLE){if(base<=f.upTo)return Math.max(0,base*f.rate-f.ded);}return 0;}
+function holdingImposto(rent){const pc=0.0365*rent;const b=0.32*rent;const irpj=0.15*b+0.10*Math.max(0,b-20000);const csll=0.09*b;return pc+irpj+csll;}
+let hld={rent:6000,contabil:600};
+VIEWS.holding=()=>{
+  const w=el('div','panel-view');
+  w.appendChild(lead("building-2","Patrimônio imobiliário","Holding de aluguel × receber como pessoa física",
+    "Para imóveis que você aluga a terceiros, compare o imposto recebendo como PF (carnê‑leão) com uma holding no Lucro Presumido. Veja a partir de quanto a holding compensa."));
+
+  const grid=el('div','calc');
+  const ins=el('div','calc-inputs card pad');
+  ins.innerHTML=`<div style="font-family:var(--f-display);font-weight:600;font-size:13px;color:var(--cyan)">Aluguéis das casas</div>
+    <label class="fld"><span>Aluguel mensal total (R$)</span><input id="h_rent" type="number" step="0.01" value="${hld.rent}"></label>
+    <label class="fld"><span>Custo contábil da holding (R$/mês)</span><input id="h_contabil" type="number" step="0.01" value="${hld.contabil}"></label>
+    <div style="font-size:11.5px;color:var(--ink-dim)">PF: tabela mensal do carnê‑leão. Holding: Presumido (~11,33% + adicional). Lucro distribuído da holding para você é <b>isento</b>.</div>`;
+  grid.appendChild(ins);
+  const out=el('div');out.id='hldOut';grid.appendChild(out);
+  w.appendChild(grid);
+  ins.querySelectorAll('input').forEach(i=>i.oninput=()=>{const k=i.id.slice(2);hld[k]=i.value===''?0:(+i.value);drawHolding(out);});
+  drawHolding(out);
+
+  // explicação
+  const exp=el('div','card pad');
+  exp.innerHTML=`<h3 style="font-size:15px;margin-bottom:8px;display:flex;align-items:center;gap:8px">${ic('info')} O que colocar (e o que NÃO colocar) na holding</h3>
+    <div style="overflow-x:auto"><table class="taxtable"><thead><tr><th>Imóvel</th><th>Na holding?</th><th>Por quê</th></tr></thead><tbody>
+      <tr><td><b>Casas alugadas a terceiros</b></td><td style="color:var(--ok);font-weight:700">Sim</td><td>Troca ~27,5% (PF) por ~11–14% (PJ) sobre o aluguel.</td></tr>
+      <tr><td><b>Barracão da empresa</b></td><td style="color:var(--warn);font-weight:700">Depende</td><td>Só economiza imposto <b>fora do Simples</b> (aí o aluguel vira despesa dedutível). No Simples, serve só p/ proteção/sucessão.</td></tr>
+      <tr><td><b>Casa onde você mora</b></td><td style="color:var(--bad);font-weight:700">Não</td><td>Sem aluguel = sem ganho; perde o <b>bem de família</b> (impenhorabilidade) e a <b>isenção de IR</b> na venda.</td></tr>
+    </tbody></table></div>
+    <ul style="margin:10px 0 0;padding-left:18px;font-size:13px;color:var(--ink-soft);line-height:1.7">
+      <li><b>ITBI na entrada:</b> holding de locação costuma <b>perder a imunidade</b> de ITBI na integralização → pode pagar ~2–3% do valor do imóvel ao transferir. Avalie com o município.</li>
+      <li><b>Forma:</b> holding é uma PJ separada (SLU sozinho, ou LTDA com a família p/ sucessão) — não use a sua EI.</li>
+      <li><b>Regime:</b> holding de aluguel vai no <b>Lucro Presumido</b>, não no Simples.</li>
+    </ul>`;
+  w.appendChild(exp);
+
+  // barracão fora do simples
+  const bar=el('div','card pad');
+  bar.innerHTML=`<h3 style="font-size:15px;margin-bottom:6px;display:flex;align-items:center;gap:8px">${ic('warehouse')} Barracão: quando vale sair do Simples</h3>
+    <p style="font-size:13.5px;color:var(--ink-soft)">No <b>Simples</b>, o aluguel do barracão pago à holding <b>não reduz</b> o imposto da Blendibox (despesa não abate o DAS) — então só compensa por proteção/sucessão. No <b>Lucro Presumido/Real</b>, esse aluguel vira <b>despesa dedutível</b>: economiza ~<b>34%</b> (IRPJ+CSLL) na operação e paga ~<b>11%</b> na holding → economia líquida de ~<b>23%</b> sobre o valor do aluguel. Ou seja: a holding do barracão “liga” quando você <b>sai do Simples</b> — veja a aba <b>Regime tributário</b> para achar esse ponto.</p>`;
+  w.appendChild(bar);
+  return w;
+};
+function drawHolding(out){
+  const rent=hld.rent||0;const contabil=hld.contabil||0;
+  const pf=irpfMensal(rent);const hImp=holdingImposto(rent);const hTot=hImp+contabil;
+  const eco=pf-hTot;
+  const pct=v=>rent?(v/rent*100).toFixed(1)+'%':'—';
+  const tile=(l,v,sub,col)=>{const c=el('div','rtile');c.innerHTML=`<div class="l">${l}</div><div class="v"${col?` style="color:${col}"`:''}>${v}</div><div style="font-size:12px;color:var(--ink-soft)">${sub}</div>`;return c;};
+  const cards=el('div');cards.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px';
+  cards.appendChild(tile('Pessoa Física (carnê‑leão)',money(pf),pct(pf)+' do aluguel'));
+  cards.appendChild(tile('Holding (Presumido)',money(hTot),pct(hImp)+' imposto + '+money(contabil)+' contábil'));
+  const hero=el('div','rtile');hero.style.cssText='grid-column:1/-1;'+(eco>0?'background:var(--grad);border-color:transparent;box-shadow:var(--glow-blue)':'');
+  const hc=eco>0?'#fff':'var(--ink)';
+  hero.innerHTML=`<div class="l" style="color:${eco>0?'rgba(255,255,255,.8)':'var(--ink-soft)'}">${eco>0?'Economia com a holding':'A holding ainda NÃO compensa'}</div>
+    <div class="v" style="color:${hc}">${eco>0?money(eco)+'/mês':money(-eco)+'/mês a mais'}</div>
+    <div style="font-size:12px;color:${eco>0?'rgba(255,255,255,.8)':'var(--ink-soft)'}">${eco>0?'= '+money(eco*12)+'/ano a menos de imposto (já descontando o contador)':'o custo contábil supera a economia de imposto neste valor'}</div>`;
+  cards.appendChild(hero);
+
+  // ponto de virada
+  let be=null;for(let r=1000;r<=50000;r+=250){if(irpfMensal(r)-(holdingImposto(r)+contabil)>0){be=r;break;}}
+  const insight=el('div','card pad');
+  insight.innerHTML=`<h3 style="font-size:15px;margin-bottom:8px;display:flex;align-items:center;gap:8px">${ic('git-compare-arrows')} Ponto de virada</h3>
+    <p style="font-size:13.5px;color:var(--ink-soft)">${be?`Com custo contábil de <b>${money(contabil)}/mês</b>, a holding passa a compensar a partir de um aluguel total de ~<b class="china">${money(be)}/mês</b>. Abaixo disso, receber como pessoa física tende a sair mais barato (o contador come a economia).`:'Nesta faixa, a holding compensa em praticamente qualquer valor de aluguel.'}</p>`;
+
+  // tabela por faixa
+  const levels=[2000,4000,6000,10000,15000,20000,30000];
+  let rows='';
+  levels.forEach(lv=>{const p=irpfMensal(lv);const h=holdingImposto(lv)+contabil;const best=h<p?'h':'p';
+    rows+=`<tr><td class="mono">${money(lv)}</td>
+      <td class="mono" style="${best==='p'?'color:var(--ok);font-weight:700':''}">${money(p)} <span style="color:var(--ink-dim)">(${(p/lv*100).toFixed(1)}%)</span></td>
+      <td class="mono" style="${best==='h'?'color:var(--ok);font-weight:700':''}">${money(h)} <span style="color:var(--ink-dim)">(${(h/lv*100).toFixed(1)}%)</span></td></tr>`;});
+  const tbl=el('div','card pad');
+  tbl.innerHTML=`<h3 style="font-size:15px;margin-bottom:4px;display:flex;align-items:center;gap:8px">${ic('table')} PF × Holding por valor de aluguel</h3>
+    <p style="font-size:12px;color:var(--ink-dim);margin-bottom:10px">Imposto mensal; holding já inclui o custo contábil de ${money(contabil)}. Verde = mais barato.</p>
+    <div style="overflow-x:auto"><table class="taxtable"><thead><tr><th>Aluguel/mês</th><th>Pessoa Física</th><th>Holding</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="foot">PF: tabela do carnê‑leão (valores de referência; a reforma do IR pode alterar as faixas). Holding: Presumido (PIS/COFINS 3,65% + IRPJ 4,8% + CSLL 2,88% sobre a receita de aluguel, + adicional). Não inclui ITBI de entrada nem IR sobre eventual venda do imóvel. Estimativa — confirme com contador/advogado.</div>`;
+
+  out.innerHTML='';out.style.cssText='display:flex;flex-direction:column;gap:16px';
+  out.appendChild(cards);out.appendChild(insight);out.appendChild(tbl);
   applyGlossary(out);icons();
 }
 

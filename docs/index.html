@@ -1,0 +1,1182 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Blendibox Sourcing China</title>
+<meta name="description" content="Sistema de sourcing de fábricas de bolsas puffer na China: polos, fornecedores, custo de importação, dados ao vivo do Comex Stat e roteiro aduaneiro.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- ⚙️ CONFIG: troque pela URL do seu Worker após o deploy -->
+<script>
+  window.BB_CONFIG = {
+    workerUrl: "https://blendibox-comex-api.blendibox.workers.dev"
+  };
+  // tema (dark por padrão) aplicado cedo para evitar flash
+  try{ document.documentElement.setAttribute('data-theme', localStorage.getItem('bb_theme') || 'dark'); }
+  catch(e){ document.documentElement.setAttribute('data-theme','dark'); }
+</script>
+
+<style>
+/* ===========================================================
+   Tema NEON / IA — fundo azul-marinho profundo, azul elétrico +
+   ciano, magenta e violeta. Ícones de cor única (ciano). Dark único.
+   =========================================================== */
+:root{
+  --bg:#060a1b; --bg2:#0a1028;
+  --panel:#0e1533; --panel-2:#121a3d; --panel-hi:#17205090;
+  --line:#243066; --line-strong:#33449a;
+  --ink:#eaf0ff; --ink-soft:#97a4d6; --ink-dim:#6773a6;
+  --blue:#3b82f6; --cyan:#22d3ee; --pink:#ff2e7e; --violet:#8b5cf6;
+  --accent:#3b82f6; --accent-ink:#8fb6ff; --accent-soft:#16255e;
+  --icon:var(--cyan);
+  --grad:linear-gradient(135deg,#3b82f6 0%,#8b5cf6 50%,#ff2e7e 100%);
+  --grad-soft:linear-gradient(135deg,#16255e,#241a52);
+  --ok:#2dd4a7; --ok-soft:#0c3b33; --warn:#fbbf24; --warn-soft:#3a2f0e;
+  --bad:#fb4e6d; --bad-soft:#3a1324; --gray:#8a95c4; --gray-soft:#1a2247;
+  --glow-blue:0 0 24px rgba(59,130,246,.35);
+  --glow-pink:0 0 24px rgba(255,46,126,.3);
+  --shadow:0 2px 6px rgba(0,0,0,.4),0 10px 30px rgba(6,10,30,.5);
+  --shadow-lg:0 20px 60px rgba(4,8,24,.7);
+  --r:16px; --r-sm:10px;
+  --f-display:"Sora",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Inter",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --maxw:1180px;
+  color-scheme:dark;
+}
+/* ---- TEMA CLARO (mesma identidade, fundo claro) ---- */
+:root[data-theme="light"]{
+  --bg:#eef1fb; --bg2:#e4e9f7;
+  --panel:#ffffff; --panel-2:#f4f6fe; --panel-hi:#eef1fbcc;
+  --line:#dde3f3; --line-strong:#c4cdea;
+  --ink:#141b34; --ink-soft:#55608b; --ink-dim:#8591b5;
+  --cyan:#0e8ba8; --icon:#0e8ba8;
+  --accent-ink:#2a4bd0; --accent-soft:#e4e9ff;
+  --grad-soft:linear-gradient(135deg,#e4e9ff,#f1e6fb);
+  --ok:#0f9d6e; --ok-soft:#d6f4e7; --warn:#a9710a; --warn-soft:#fbeccb;
+  --bad:#e23a5c; --bad-soft:#fce0e8; --gray:#5e6a94; --gray-soft:#edf0f8;
+  --glow-blue:0 0 22px rgba(59,130,246,.16); --glow-pink:0 0 22px rgba(255,46,126,.16);
+  --shadow:0 1px 2px rgba(20,30,70,.06),0 10px 30px rgba(30,50,110,.08);
+  --shadow-lg:0 20px 60px rgba(30,50,110,.16);
+  color-scheme:light;
+}
+:root[data-theme="light"] body::before{opacity:.5}
+:root[data-theme="light"] .pill.cyan{background:#d3eff6;color:#0b7285}
+:root[data-theme="light"] .step .num{background:#daf0f6;color:#0b7285}
+:root[data-theme="light"] #tip{background:#ffffff;color:var(--ink)}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;min-height:100vh;position:relative;
+}
+body::before{ /* aura neon de fundo */
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(60vw 50vh at 12% -8%, rgba(255,46,126,.14), transparent 60%),
+    radial-gradient(55vw 50vh at 92% 0%, rgba(59,130,246,.18), transparent 60%),
+    radial-gradient(70vw 60vh at 50% 110%, rgba(139,92,246,.16), transparent 60%),
+    var(--bg);
+}
+h1,h2,h3,h4,h5{font-family:var(--f-display);font-weight:600;margin:0;letter-spacing:-.01em;text-wrap:balance}
+p{margin:0}
+a{color:var(--accent-ink);text-decoration:none}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.mono{font-variant-numeric:tabular-nums}
+[data-lucide]{width:1em;height:1em}
+svg.lucide{width:1em;height:1em;stroke:var(--icon);vertical-align:-.125em}
+
+/* layout: menu lateral + topbar (mobile-first) */
+.shell{min-height:100vh}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:266px;max-width:85vw;z-index:60;
+  background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:4px;
+  padding:18px;padding-top:calc(38px+env(safe-area-inset-top,0px));padding-left:max(18px,env(safe-area-inset-left,0px));
+  overflow-y:auto;transform:translateX(-100%);transition:transform .26s cubic-bezier(.4,0,.2,1)}
+.sidebar.open{transform:none;box-shadow:var(--shadow-lg)}
+.sidebar .brand{padding-left:4px;padding-top:8px;margin-bottom:8px}
+.side-foot{margin-top:auto;padding-top:14px;display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line)}
+.overlay{position:fixed;inset:0;background:rgba(3,6,18,.55);backdrop-filter:blur(2px);z-index:55;opacity:0;visibility:hidden;transition:opacity .26s,visibility .26s}
+.overlay.open{opacity:1;visibility:visible}
+.topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:12px;
+  background:var(--panel-hi);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);
+  padding-bottom:16px;padding-top:8px;
+  padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+.hamb,.theme-btn{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:11px;background:var(--panel-2);border:1px solid var(--line-strong);color:var(--ink);cursor:pointer;flex:none}
+.hamb svg.lucide,.theme-btn svg.lucide{stroke:currentColor;width:20px;height:20px}
+.hamb:hover,.theme-btn:hover{border-color:var(--cyan)}
+.tb-brand{display:flex;align-items:center;gap:10px;margin-right:auto;min-width:0}
+.theme-wide{display:flex;align-items:center;gap:9px;width:100%;padding:10px 12px;border-radius:11px;background:var(--panel-2);border:1px solid var(--line-strong);color:var(--ink);font-family:var(--f-display);font-weight:600;font-size:13.5px;cursor:pointer}
+.theme-wide:hover{border-color:var(--cyan)}
+.theme-wide svg.lucide{stroke:var(--icon);width:18px;height:18px}
+.main-col{min-height:100vh}
+@media(min-width:900px){
+  .sidebar{transform:none;box-shadow:none}
+  .overlay{display:none}.topbar{display:none}.hamb{display:none}
+  .main-col{margin-left:266px}
+}
+.brand{display:flex;align-items:center;gap:12px;margin-right:auto}
+.logo{width:42px;height:42px;border-radius:13px;background:var(--grad);display:grid;place-items:center;flex:none;
+  box-shadow:var(--glow-pink);position:relative}
+.logo svg{stroke:#fff;width:22px;height:22px}
+.brand h1{font-size:17px;line-height:1.05;font-weight:700}
+.brand h1 b{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.brand .sub{font-size:11px;color:var(--ink-soft);letter-spacing:.14em;text-transform:uppercase;margin-top:2px}
+.badge-live{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-display);font-size:11px;font-weight:600;
+  color:var(--cyan);background:var(--panel-2);border:1px solid var(--line);padding:6px 11px;border-radius:999px}
+.badge-live .pulse{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.side-nav{display:flex;flex-direction:column;gap:5px;margin-top:22px}
+.side-nav button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:transparent;border:1px solid transparent;
+  color:var(--ink-soft);font-family:var(--f-display);font-size:14px;font-weight:500;padding:10px 12px;border-radius:11px;cursor:pointer}
+.side-nav button svg.lucide{stroke:currentColor;width:18px;height:18px;flex:none}
+.side-nav button:hover{background:var(--panel-2);color:var(--ink)}
+.side-nav button[aria-selected="true"]{background:var(--grad);color:#fff;border-color:transparent;box-shadow:var(--glow-blue)}
+.side-nav button[aria-selected="true"] svg.lucide{stroke:#fff}
+
+main{padding-block:42px 64px}
+.panel-view{display:flex;flex-direction:column;gap:20px}
+.lead .eyebrow{font-family:var(--f-display);font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--cyan);display:inline-flex;align-items:center;gap:7px}
+.lead h2{font-size:27px;margin-top:7px;font-weight:700}
+.lead p{color:var(--ink-soft);margin-top:9px;max-width:64ch}
+
+.card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.pad{padding:18px}
+.grid{display:grid;gap:16px}
+.g-2{grid-template-columns:repeat(2,1fr)}.g-3{grid-template-columns:repeat(3,1fr)}.g-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:820px){.g-3,.g-4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.g-2,.g-3,.g-4{grid-template-columns:1fr}}
+
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:999px;font-family:var(--f-display)}
+.pill.accent{background:var(--accent-soft);color:var(--accent-ink)}
+.pill.cyan{background:#0b3a46;color:var(--cyan)}
+.pill.pink{background:var(--bad-soft);color:var(--pink)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.gray{background:var(--gray-soft);color:var(--gray)}
+.pill.violet{background:#241a52;color:#b89bff}
+
+.stat{padding:17px 18px;border-radius:var(--r);background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.stat::after{content:"";position:absolute;right:-20px;top:-20px;width:70px;height:70px;border-radius:50%;background:var(--grad);opacity:.12;filter:blur(8px)}
+.stat .ic{font-size:18px;color:var(--cyan)}
+.stat .n{font-family:var(--f-display);font-size:30px;font-weight:700;line-height:1;margin-top:8px}
+.stat .l{font-size:12.5px;color:var(--ink-soft);margin-top:6px}
+
+.pillars{display:grid;gap:14px;grid-template-columns:repeat(3,1fr)}
+@media(max-width:720px){.pillars{grid-template-columns:1fr}}
+.pillar{padding:18px;border-radius:var(--r);border:1px solid var(--line);background:var(--panel-2);position:relative}
+.pillar .ic{font-size:22px;color:var(--cyan)}
+.pillar h4{font-size:15px;margin:11px 0 6px}
+.pillar p{font-size:13px;color:var(--ink-soft)}
+
+.hub{display:flex;flex-direction:column;gap:12px;padding:18px;cursor:pointer;transition:transform .14s,box-shadow .14s,border-color .14s}
+.hub:hover{transform:translateY(-3px);border-color:var(--line-strong);box-shadow:var(--shadow-lg),var(--glow-blue)}
+.hub .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.hub h3{font-size:17px}
+.hub .loc,.hub .cn{font-size:12px;color:var(--ink-soft)}
+.fit{display:flex;align-items:center;gap:3px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--line-strong)}
+.dot.on{background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+.hub .spec{font-size:13px;color:var(--ink-soft)}
+.hub .tags{display:flex;flex-wrap:wrap;gap:5px}
+
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+select,input,textarea{font-family:var(--f-body);font-size:14px;color:var(--ink);background:var(--panel-2);border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:9px 11px;width:100%}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.18)}
+label.fld{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--ink-soft)}
+label.fld span{font-family:var(--f-display)}
+
+.drawer-bg{position:fixed;inset:0;background:rgba(3,6,18,.72);backdrop-filter:blur(3px);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.drawer-bg.open{display:flex}
+.drawer{background:linear-gradient(180deg,var(--panel),var(--panel-2));width:100%;max-width:640px;max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;border:1px solid var(--line-strong);
+  padding:22px;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px));box-shadow:var(--shadow-lg)}
+@media(min-width:640px){.drawer-bg{align-items:center}.drawer{border-radius:20px}}
+.drawer h3{font-size:21px}
+.close{float:right;background:var(--panel-hi);border:1px solid var(--line);color:var(--ink);width:34px;height:34px;border-radius:9px;cursor:pointer;display:grid;place-items:center}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:7px 14px;font-size:13.5px;margin-top:6px}
+.kv dt{color:var(--ink-soft);font-weight:600}.kv dd{margin:0}
+@media(max-width:480px){.kv{grid-template-columns:1fr}.kv dt{margin-top:8px}}
+
+.btn{font-family:var(--f-display);font-weight:600;font-size:14px;border-radius:10px;padding:10px 16px;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;gap:7px;color:var(--ink)}
+.btn svg.lucide{stroke:currentColor}
+.btn.primary{background:var(--grad);color:#fff;box-shadow:var(--glow-blue)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:var(--panel-2);border-color:var(--line-strong)}
+.btn.ghost:hover{border-color:var(--cyan)}
+.btn.sm{padding:6px 11px;font-size:12.5px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.sup-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.sup-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.sup{padding:16px;display:flex;flex-direction:column;gap:11px}
+.sup .r1{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.sup h4{font-size:15.5px}
+.sup .meta{font-size:12px;color:var(--ink-soft)}
+.score-pill{font-family:var(--f-display);font-weight:700;font-size:15px;padding:2px 10px;border-radius:8px}
+.sup .vals{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:12.5px;color:var(--ink-soft)}
+.sup .vals b{font-family:var(--f-display);color:var(--ink)}
+.sup .acts{display:flex;gap:6px;margin-top:2px}
+.empty{text-align:center;padding:40px 20px;color:var(--ink-soft)}
+.empty .big{font-size:30px;margin-bottom:10px;color:var(--cyan)}
+.banner{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;font-size:13px;background:var(--panel-2);border:1px solid var(--line);color:var(--ink-soft)}
+.banner.warn{border-color:#5a4a12;color:var(--warn)}
+.banner.info{border-color:#1e4a6e;color:var(--accent-ink)}
+.banner svg.lucide{stroke:currentColor;font-size:17px;flex:none}
+.stars{display:inline-flex;gap:3px}
+.stars span{font-size:19px;color:var(--line-strong);cursor:pointer;line-height:1}
+.stars span.on{color:var(--cyan);text-shadow:0 0 8px rgba(34,211,238,.6)}
+
+.modal-bg{position:fixed;inset:0;background:rgba(3,6,18,.74);backdrop-filter:blur(3px);z-index:60;display:none;align-items:center;justify-content:center;padding:14px}
+.modal-bg.open{display:flex}
+.modal{background:linear-gradient(180deg,var(--panel),var(--panel-2));border-radius:18px;max-width:560px;width:100%;max-height:90vh;overflow:auto;padding:22px;border:1px solid var(--line-strong);box-shadow:var(--shadow-lg)}
+.modal h3{font-size:19px;margin-bottom:14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.form-grid{grid-template-columns:1fr}}
+.form-grid .full{grid-column:1/-1}
+textarea{resize:vertical;min-height:62px}
+
+.calc{display:grid;grid-template-columns:340px 1fr;gap:18px}
+@media(max-width:860px){.calc{grid-template-columns:1fr}}
+.calc-inputs{display:flex;flex-direction:column;gap:12px}
+.inrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.result-tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.rtile{padding:14px 16px;border-radius:12px;background:var(--panel-2);border:1px solid var(--line)}
+.rtile .l{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.rtile .v{font-family:var(--f-display);font-size:22px;font-weight:700;margin-top:4px}
+.rtile.hero{background:var(--grad);color:#fff;border-color:transparent;grid-column:1/-1;box-shadow:var(--glow-blue)}
+.rtile.hero .l{color:rgba(255,255,255,.8)}
+.taxtable{width:100%;border-collapse:collapse;font-size:13.5px}
+.taxtable td,.taxtable th{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line)}
+.taxtable th{font-family:var(--f-display);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft)}
+.taxtable td:last-child,.taxtable th:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.bar-wrap{display:flex;flex-direction:column;gap:7px;margin-top:6px}
+.bar-row{display:grid;grid-template-columns:140px 1fr 86px;gap:10px;align-items:center;font-size:12.5px}
+.bar-track{height:10px;background:var(--gray-soft);border-radius:999px;overflow:hidden}
+.bar-fill{height:100%;border-radius:999px;background:var(--grad)}
+
+.phase{display:flex;flex-direction:column;gap:12px}
+.phase-h{display:flex;align-items:center;gap:11px}
+.phase-n{font-family:var(--f-display);font-weight:700;font-size:13px;background:var(--grad);color:#fff;width:27px;height:27px;border-radius:8px;display:grid;place-items:center;flex:none;box-shadow:var(--glow-blue)}
+.phase-h h3{font-size:17px}
+.step{display:flex;gap:13px;padding:15px 16px}
+.step .num{font-family:var(--f-display);font-weight:700;font-size:14px;color:var(--cyan);background:#0b2f40;min-width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:none}
+.step h4{font-size:14.5px}
+.step .b{font-size:13px;color:var(--ink-soft);margin-top:4px}
+.step .risk{font-size:12.5px;margin-top:8px;padding:8px 11px;border-radius:9px;background:var(--bad-soft);color:var(--pink);display:flex;gap:7px}
+.step .risk svg.lucide{stroke:currentColor;flex:none}
+.channels{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+@media(max-width:620px){.channels{grid-template-columns:repeat(2,1fr)}}
+.chan{padding:14px;border-radius:12px;border:1px solid var(--line);text-align:center;background:var(--panel-2)}
+.chan .sq{font-size:21px;color:var(--cyan)}
+.chan h5{font-family:var(--f-display);font-size:13px;margin:7px 0 4px}
+.chan p{font-size:11.5px;color:var(--ink-soft)}
+.chan .emoji{font-size:21px}
+
+.check{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.check:last-child{border-bottom:none}
+.check input{width:18px;height:18px;margin-top:1px;accent-color:var(--cyan);flex:none}
+.tmpl{position:relative}
+.tmpl pre{white-space:pre-wrap;font-family:var(--f-body);font-size:13px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px;margin:8px 0 0;color:var(--ink)}
+.copy{position:absolute;top:8px;right:8px}
+details.src summary{cursor:pointer;font-size:12.5px;color:var(--ink-soft);font-weight:600}
+
+/* mercado */
+.mkt-form{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto;gap:10px;align-items:flex-end}
+@media(max-width:760px){.mkt-form{grid-template-columns:1fr 1fr}}
+.mkt-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:720px){.mkt-tiles{grid-template-columns:repeat(2,1fr)}}
+.ctry-row{display:grid;grid-template-columns:150px 1fr 110px;gap:10px;align-items:center;font-size:13px;padding:6px 0}
+@media(max-width:520px){.ctry-row{grid-template-columns:110px 1fr 90px}}
+.ctry-row .cn{display:flex;align-items:center;gap:7px;min-width:0}
+.ctry-row .cn b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flagdot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--violet)}
+.china{color:var(--pink);font-weight:700}
+.spin{width:16px;height:16px;border:2px solid var(--line-strong);border-top-color:var(--cyan);border-radius:50%;display:inline-block;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* auth */
+.authwrap{max-width:440px}
+.authtabs{display:flex;gap:6px;margin-bottom:14px}
+.authtab{flex:1;background:var(--panel-2);border:1px solid var(--line-strong);color:var(--ink-soft);font-family:var(--f-display);font-weight:600;font-size:13.5px;padding:9px;border-radius:10px;cursor:pointer}
+.authtab.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:var(--glow-blue)}
+.authform{display:flex;flex-direction:column;gap:12px}
+.linkbtn{background:none;border:none;color:var(--accent-ink);font-size:12.5px;cursor:pointer;text-align:left;padding:2px 0;font-family:var(--f-body)}
+.linkbtn:hover{text-decoration:underline}
+.authmsg{font-size:12.5px;padding:9px 12px;border-radius:9px;margin-bottom:12px}
+.authmsg.ok{background:var(--ok-soft);color:var(--ok)}
+.authmsg.err{background:var(--bad-soft);color:var(--bad)}
+.userbar{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink-soft)}
+.userbar .av{width:30px;height:30px;border-radius:9px;background:var(--grad);color:#fff;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:13px}
+.foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink-dim);line-height:1.6}
+
+/* glossário */
+.term{border-bottom:1px dashed var(--cyan);cursor:help;color:inherit}
+.term:hover,.term.active{background:rgba(34,211,238,.14)}
+#tip{position:fixed;z-index:80;max-width:300px;background:#0a1030;color:var(--ink);border:1px solid var(--line-strong);
+  padding:10px 12px;border-radius:10px;font-size:12.5px;line-height:1.45;box-shadow:var(--shadow-lg),var(--glow-blue);
+  pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s;visibility:hidden}
+#tip.show{opacity:1;transform:translateY(0);visibility:visible}
+#tip b{font-family:var(--f-display);display:block;margin-bottom:3px;color:var(--cyan)}
+.gloss-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(max-width:620px){.gloss-grid{grid-template-columns:1fr}}
+.gterm{padding:14px 16px}
+.gterm .ab{font-family:var(--f-display);font-weight:700;font-size:15px;color:var(--cyan)}
+.gterm .fn{font-size:12px;color:var(--ink-soft);margin:2px 0 7px;font-style:italic}
+.gterm .df{font-size:13px}
+.gcat{grid-column:1/-1;font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--cyan);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo"><i data-lucide="zap"></i></div>
+      <div>
+        <h1>Blendibox <b>Sourcing</b></h1>
+        <div class="sub">bolsas puffer · China</div>
+      </div>
+    </div>
+    <nav class="side-nav" role="tablist" id="tabs"></nav>
+    <div class="side-foot">
+      <button class="theme-wide" id="themeBtn" data-theme-btn data-theme-label="1"></button>
+      <span class="badge-live"><span class="pulse"></span> Comex Stat ao vivo</span>
+    </div>
+  </aside>
+  <div class="overlay" id="overlay"></div>
+  <div class="main-col">
+    <header class="topbar">
+      <button class="hamb" id="hamb" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
+      <div class="tb-brand">
+        <div class="logo" style="width:34px;height:34px;border-radius:10px"><i data-lucide="zap"></i></div>
+        <h1 style="font-size:15px">Blendibox <b>Sourcing</b></h1>
+      </div>
+      <button class="theme-btn" id="themeBtnM" data-theme-btn aria-label="Alternar tema"></button>
+    </header>
+    <main class="wrap">
+      <div id="views"></div>
+      <div class="foot" id="foot"></div>
+    </main>
+  </div>
+</div>
+
+<div class="drawer-bg" id="hubDrawer"><div class="drawer" id="hubDrawerBody" role="dialog" aria-modal="true"></div></div>
+<div class="modal-bg" id="supModal"><div class="modal" id="supModalBody" role="dialog" aria-modal="true"></div></div>
+<div id="tip" role="tooltip"></div>
+
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script>
+/* ============================ DADOS ============================ */
+const HUBS=[
+  {id:"baigou",name:"Baigou",cn:"白沟",prov:"Hebei (Baoding)",fit:5,
+   spec:"Maior polo atacadista de bolsas e malas da China. Nylon/poliéster, mochilas, bolsas acolchoadas. Preço baixo e MOQ flexível.",
+   price:"$ — baixo",quality:"Básico a médio",moq:"Baixo (100–500)",export:"Médio (muitos via trading)",
+   bestFor:"Volume com preço agressivo; linha de entrada puffer.",
+   reach:"Baigou New City (mercados Heng Da, Baigou Luggage City). Visita presencial rende muito; use agente local.",
+   tags:["Nylon","Acolchoado","Atacado","MOQ baixo"]},
+  {id:"shiling",name:"Guangzhou · Shiling",cn:"狮岭 / 白云",prov:"Guangdong",fit:4,
+   spec:"\"Capital do couro e das bolsas\" (Huadu/Shiling) + mercados de Baiyun. Moda, acabamento melhor, forte em OEM/ODM e exportação.",
+   price:"$$ — médio",quality:"Médio a alto",moq:"Médio (300–1000)",export:"Alto (export-ready)",
+   bestFor:"Puffer fashion com acabamento premium e marca própria.",
+   reach:"Mercados Sanyuanli / Shijing (Baiyun) e fábricas em Shiling. Base ideal durante a Canton Fair.",
+   tags:["Moda","OEM/ODM","Export-ready","Acabamento"]},
+  {id:"quanzhou",name:"Quanzhou · Jinjiang",cn:"泉州 / 晋江",prov:"Fujian",fit:5,
+   spec:"Polo de bolsas esportivas e técnicas em nylon/poliéster, no ecossistema de sportswear (Anta, 361°). Forte em tecidos técnicos e matelassê.",
+   price:"$$ — médio",quality:"Médio a alto",moq:"Médio (500–1000)",export:"Alto",
+   bestFor:"Puffer técnico/esportivo, tecidos impermeáveis, costura matelassê de qualidade.",
+   reach:"Via Alibaba/Made-in-China filtrando Fujian; feiras de calçados/têxteis de Jinjiang.",
+   tags:["Nylon técnico","Matelassê","Esportivo","Impermeável"]},
+  {id:"pinghu",name:"Pinghu",cn:"平湖",prov:"Zhejiang (Jiaxing)",fit:5,
+   spec:"Base nacional de confecção de vestuário acolchoado/jaquetas puffer para exportação. Know-how de enchimento e matelassê que define o visual puffer.",
+   price:"$$ — médio",quality:"Alto",moq:"Médio (500–1000)",export:"Alto",
+   bestFor:"Construção puffer \"de verdade\" — mesmo enchimento/costura das jaquetas puffer.",
+   reach:"Fábricas de outerwear que também fazem acessórios; aproxime via trading de vestuário de Zhejiang.",
+   tags:["Puffer real","Enchimento","Outerwear","Matelassê"]},
+  {id:"nantong",name:"Nantong",cn:"南通",prov:"Jiangsu",fit:4,
+   spec:"Capital mundial de têxteis-lar e produtos de pluma/enchimento (down & feather). Excelente para o preenchimento e a pluma das peças puffer.",
+   price:"$$ — médio",quality:"Alto",moq:"Médio",export:"Alto",
+   bestFor:"Enchimento (pluma/sintético), acolchoados de qualidade e tecidos.",
+   reach:"Mercado têxtil de Diebu/Jinqiao; combine com montador de bolsas de outro polo.",
+   tags:["Enchimento","Têxtil","Pluma","Qualidade"]},
+  {id:"dg",name:"Dongguan · Shenzhen",cn:"东莞 / 深圳",prov:"Guangdong",fit:3,
+   spec:"OEM de nível mais alto: mochilas e bolsas técnicas, controle de qualidade forte e muita experiência de exportação. Custo maior.",
+   price:"$$$ — alto",quality:"Alto",moq:"Médio a alto",export:"Muito alto",
+   bestFor:"Qualidade premium, auditoria social (BSCI/Sedex) e processos maduros.",
+   reach:"Alibaba Gold/Verified + visitas; fornecedores acostumados a marcas internacionais.",
+   tags:["Premium","QC forte","Auditado","Técnico"]},
+  {id:"yiwu",name:"Yiwu",cn:"义乌",prov:"Zhejiang",fit:3,
+   spec:"Maior mercado atacadista de pequenas mercadorias do mundo. Ótimo para amostras, variedade e pedidos pequenos via trading, menos para OEM profundo.",
+   price:"$ — baixo",quality:"Básico a médio",moq:"Muito baixo",export:"Alto (muitos agentes)",
+   bestFor:"Prospecção, amostras rápidas e pedidos mistos iniciais.",
+   reach:"Yiwu International Trade City (distritos 1–5) + agentes de compra de Yiwu.",
+   tags:["Amostras","MOQ mínimo","Variedade","Trading"]},
+  {id:"hebei",name:"Hebei (entorno Baigou)",cn:"河北",prov:"Hebei",fit:4,
+   spec:"Cinturão de fábricas de malas e bolsas ao redor de Baigou (Baoding/Cangzhou). Capacidade de produção grande a custo competitivo.",
+   price:"$ — baixo",quality:"Básico a médio",moq:"Baixo a médio",export:"Médio",
+   bestFor:"Escalar volume depois de validar a amostra em Baigou.",
+   reach:"Fábricas indicadas pelos atacadistas de Baigou; peça para visitar o chão de fábrica.",
+   tags:["Capacidade","Volume","Custo baixo"]},
+];
+const CHANNELS=[
+  {ic:"shopping-cart",name:"1688.com",desc:"Atacado doméstico chinês — preços de fábrica reais (precisa de agente/tradução)."},
+  {ic:"globe",name:"Alibaba.com",desc:"OEM internacional. Filtre por Verified/Trade Assurance e região."},
+  {ic:"factory",name:"Made-in-China / Global Sources",desc:"Fabricantes verificados, bom para bolsas e acessórios."},
+  {ic:"tent",name:"Canton Fair (Guangzhou)",desc:"Fase de bolsas/couro em abril e outubro. Contato direto."},
+  {ic:"bar-chart-3",name:"Logcomex / dados aduaneiros",desc:"Acha fábricas que JÁ exportam puffer pelos registros de embarque + preço de referência."},
+  {ic:"search",name:"Panjiva / ImportGenius",desc:"Dados de B/L globais: quem exporta o quê, para quem e a que volume."},
+  {ic:"landmark",name:"Comex Stat (MDIC)",desc:"Estatística oficial de importação por NCM — já integrada neste site, na aba Mercado."},
+  {ic:"compass",name:"Agente de compras",desc:"Agente local em Guangzhou/Yiwu para auditar, negociar e consolidar."},
+];
+const PHASES=[
+  {n:"1",title:"Planejamento e habilitação (antes de comprar)",steps:[
+    {num:"1",h:"Habilitação no RADAR (Siscomex)",b:"Registro na Receita Federal para operar no comércio exterior. Modalidades Limitada (até US$ 50 mil / US$ 150 mil por semestre) ou Ilimitada.",risk:"Negativa da Receita por pendência fiscal ou falta de comprovação de capacidade financeira."},
+    {num:"2",h:"Classificação fiscal (NCM)",b:"Definir o código de 8 dígitos que identifica a bolsa (família 4202). A NCM determina os impostos e eventuais licenças. Bolsas têxteis: 42022220 é a referência comum — confirme com despachante.",risk:"Erro de NCM é o erro mais caro: multa por classificação incorreta e retenção da carga."},
+    {num:"3",h:"Barreiras e Licença de Importação (LI)",b:"Checar anuência de órgãos (INMETRO, etc.). Se exigir LI, emitir ANTES do embarque.",risk:"Embarcar sem a LI prévia gera multa alta e risco de devolução ao país de origem."},
+  ]},
+  {n:"2",title:"Negociação e fechamento comercial",steps:[
+    {num:"4",h:"Incoterms e Proforma Invoice",b:"Formalizar a Proforma (orçamento) e definir o Incoterm: FOB (vendedor entrega no porto de origem) ou CIF (vendedor paga frete + seguro até o Brasil).",risk:"Achar que o preço do produto é o final — frete internacional e taxas podem quase dobrar a operação."},
+    {num:"5",h:"Fechamento de câmbio",b:"Contratar banco/corretora autorizada pelo Banco Central para pagar o fornecedor em dólar.",risk:"Volatilidade cambial corrói a margem; golpe de troca de conta do fornecedor (invasão de e-mail) — sempre confirme os dados por outro canal."},
+  ]},
+  {n:"3",title:"Logística internacional",steps:[
+    {num:"6",h:"Coleta, estufagem e embarque",b:"Emissão dos documentos de embarque. O principal é o Conhecimento de Carga: AWB (aéreo) ou BL (marítimo) — o \"RG\" da mercadoria.",risk:"Avarias, extravios e roll-over (falta de espaço no navio) atrasam a chegada."},
+    {num:"7",h:"Seguro internacional",b:"Apólice cobrindo o trajeto e os riscos do transporte.",risk:"Sem seguro, um sinistro (perda de contêiner no mar) vira prejuízo total e irrecuperável."},
+  ]},
+  {n:"4",title:"Desembaraço aduaneiro (alfândega brasileira)",steps:[
+    {num:"8",h:"Registro da DUIMP (ou DI) e impostos",b:"Na chegada, o despachante registra a declaração no Portal Único e o sistema debita II, IPI, PIS, COFINS (federais) e ICMS (estadual).",risk:"Falta de fluxo de caixa: sem dinheiro para os impostos na data exata, a carga trava gerando juros e armazenagem diária."},
+    {num:"9",h:"Parametrização — canais de conferência",b:"A Receita submete a declaração a análise de risco e define o canal (verde/amarelo/vermelho/cinza).",risk:"Canal vermelho ou cinza pode levar semanas; armazenagem cara + demurrage do contêiner podem quebrar uma empresa pequena."},
+  ]},
+  {n:"5",title:"Recepção e entrada fiscal",steps:[
+    {num:"10",h:"Nota Fiscal de entrada e retirada",b:"Emitir a NF de entrada que \"nacionaliza\" o produto, pagar taxas do terminal e contratar transporte rodoviário nacional.",risk:"Erro na NF trava o caminhão nas barreiras estaduais; no trajeto há risco de roubo de carga."},
+  ]},
+];
+const CANAIS=[{sq:"🟩",h:"Verde",p:"Liberação automática, sem vistoria."},{sq:"🟨",h:"Amarelo",p:"Análise documental estrita."},{sq:"🟥",h:"Vermelho",p:"Vistoria física + documentos."},{sq:"⬛",h:"Cinza",p:"Investigação por suspeita de fraude/subfaturamento."}];
+const DD=[
+  "Pedir a licença comercial (营业执照) e conferir CNPJ chinês / nome registrado.",
+  "Confirmar que é fábrica, não só trading — peça fotos/vídeo do chão de fábrica ou vídeo-chamada.",
+  "Verificar status na plataforma: Alibaba Verified Supplier / Trade Assurance ativos.",
+  "Cruzar o fornecedor em dados aduaneiros (Logcomex/Panjiva) — ele realmente exporta puffer?",
+  "Pedir amostra paga antes de qualquer pedido (teste costura, zíper, enchimento, impermeabilidade).",
+  "Negociar pagamento seguro: 30% sinal / 70% contra cópia do BL, ou escrow do Trade Assurance. Evitar 100% antecipado.",
+  "Confirmar MOQ, lead time, capacidade mensal e política de defeitos por escrito.",
+  "Pedir certificações se necessário (BSCI/Sedex para auditoria social; testes de tecido).",
+  "Alinhar especificação técnica (tech pack): tecido, gramatura, enchimento, ferragens, cor Pantone, etiqueta/marca.",
+  "Confirmar dados bancários do fornecedor por 2º canal antes de fechar câmbio (anti-fraude).",
+];
+const TEMPLATES=[
+  {id:"t1",title:"Primeiro contato (inglês)",body:`Hello, this is [SEU NOME] from Blendibox, a Brazilian bag brand.
+
+We are looking for a manufacturing partner for puffer (quilted/padded) bags and want to evaluate your factory.
+
+Could you please share:
+1. Are you a factory or a trading company?
+2. MOQ per color/style and current lead time
+3. FOB price (USD) for a padded nylon puffer bag, approx. [TAMANHO/MODELO]
+4. Which fabric, filling and hardware you typically use
+5. Do you offer OEM/ODM with our own logo and label?
+6. Trade Assurance / accepted payment terms
+
+We plan to start with a sample order and scale after approval.
+Thank you — looking forward to your reply.`},
+  {id:"t2",title:"Pedido de amostra + tech pack (inglês)",body:`Hi [FORNECEDOR],
+
+We'd like to order a paid sample before placing a bulk order.
+
+Specs:
+- Model: puffer bag, quilted panels
+- Fabric / GSM: [ex.: nylon 70D, water-repellent]
+- Filling: [ex.: poly padding 100g]
+- Hardware: [zípers, fivelas]
+- Color: Pantone [XXXX]
+- Logo / label: attached (our brand Blendibox)
+
+Please confirm:
+- Sample cost and production time
+- Courier cost to Brazil (DHL/FedEx) and total
+- Whether the sample cost is deductible from the first order
+
+We'll send payment once confirmed. Thank you!`},
+  {id:"t3",title:"Confirmação anti-fraude de câmbio (português)",body:`Lembrete interno antes de fechar o câmbio:
+
+1. Confirmar os dados bancários do fornecedor por VÍDEO-CHAMADA ou telefone — nunca só por e-mail.
+2. Desconfiar de qualquer "mudança de conta" de última hora (golpe clássico de invasão de e-mail).
+3. Conferir se o beneficiário bate com o nome da empresa na licença comercial.
+4. Guardar Proforma Invoice assinada com Incoterm, valor e dados bancários.`},
+];
+const GLOSSARY=[
+  {t:"II",full:"Imposto de Importação",def:"Tributo federal cobrado sobre a entrada de mercadoria estrangeira. Incide sobre o valor aduaneiro (CIF).",cat:"Tributos"},
+  {t:"IPI",full:"Imposto sobre Produtos Industrializados",def:"Tributo federal sobre produtos industrializados; na importação incide sobre o valor aduaneiro + II.",cat:"Tributos"},
+  {t:"PIS",full:"Programa de Integração Social (PIS-Importação)",def:"Contribuição federal cobrada na importação (alíquota padrão ~2,10%).",cat:"Tributos"},
+  {t:"COFINS",full:"Contribuição para o Financiamento da Seguridade Social",def:"Contribuição federal cobrada na importação (alíquota padrão ~9,65%).",cat:"Tributos"},
+  {t:"ICMS",full:"Imposto sobre Circulação de Mercadorias e Serviços",def:"Imposto estadual, com cálculo \"por dentro\" (entra na própria base). A alíquota varia conforme o estado.",cat:"Tributos"},
+  {t:"AFRMM",full:"Adicional ao Frete para Renovação da Marinha Mercante",def:"Taxa de ~8% sobre o frete marítimo internacional. Não incide em importação aérea.",cat:"Tributos"},
+  {t:"NCM",full:"Nomenclatura Comum do Mercosul",def:"Código de 8 dígitos que classifica o produto e define impostos e licenças. Bolsas ficam na família 4202.",cat:"Aduana & processo"},
+  {t:"DUIMP",full:"Declaração Única de Importação",def:"Declaração do novo Portal Único Siscomex que substitui a DI no desembaraço aduaneiro.",cat:"Aduana & processo"},
+  {t:"DI",full:"Declaração de Importação",def:"Documento tradicional de registro da importação na Receita, sendo migrado para a DUIMP.",cat:"Aduana & processo"},
+  {t:"Siscomex",full:"Sistema Integrado de Comércio Exterior",def:"Plataforma do governo (Portal Único) onde as operações de comércio exterior são registradas.",cat:"Aduana & processo"},
+  {t:"RADAR",full:"Registro e Rastreamento da Atuação dos Intervenientes Aduaneiros",def:"Habilitação na Receita Federal que autoriza a empresa a operar no comércio exterior (Limitada/Ilimitada).",cat:"Aduana & processo"},
+  {t:"LI",full:"Licença de Importação",def:"Autorização prévia exigida por órgãos anuentes para certos produtos; deve ser emitida antes do embarque.",cat:"Aduana & processo"},
+  {t:"RFB",full:"Receita Federal do Brasil",def:"Órgão que fiscaliza o comércio exterior, parametriza as cargas e cobra os tributos.",cat:"Aduana & processo"},
+  {t:"MDIC",full:"Ministério do Desenvolvimento, Indústria, Comércio e Serviços",def:"Órgão responsável por políticas de comércio exterior; mantém a estatística Comex Stat.",cat:"Aduana & processo"},
+  {t:"SECEX",full:"Secretaria de Comércio Exterior",def:"Secretaria que regula e emite normas de comércio exterior, incluindo anuências.",cat:"Aduana & processo"},
+  {t:"ANVISA",full:"Agência Nacional de Vigilância Sanitária",def:"Órgão anuente para produtos de saúde, cosméticos, alimentos — pode exigir registro/licença.",cat:"Órgãos anuentes"},
+  {t:"INMETRO",full:"Instituto Nacional de Metrologia, Qualidade e Tecnologia",def:"Órgão anuente para produtos sujeitos a certificação compulsória de qualidade/segurança.",cat:"Órgãos anuentes"},
+  {t:"MAPA",full:"Ministério da Agricultura e Pecuária",def:"Órgão anuente para produtos de origem animal/vegetal.",cat:"Órgãos anuentes"},
+  {t:"FOB",full:"Free On Board",def:"Incoterm em que o vendedor entrega a carga no porto de origem; frete e seguro internacionais ficam por conta do comprador.",cat:"Comercial & logística"},
+  {t:"CIF",full:"Cost, Insurance and Freight",def:"Incoterm em que o vendedor paga custo, seguro e frete até o porto de destino.",cat:"Comercial & logística"},
+  {t:"Incoterms",full:"International Commercial Terms",def:"Regras internacionais que definem quem paga o quê e onde o risco passa do vendedor ao comprador (FOB, CIF, EXW...).",cat:"Comercial & logística"},
+  {t:"MOQ",full:"Minimum Order Quantity",def:"Quantidade mínima de pedido que a fábrica aceita produzir, geralmente por cor/modelo.",cat:"Comercial & logística"},
+  {t:"OEM",full:"Original Equipment Manufacturer",def:"Fábrica produz conforme a especificação/projeto do cliente (produto da sua marca).",cat:"Comercial & logística"},
+  {t:"ODM",full:"Original Design Manufacturer",def:"Fábrica oferece um design próprio que o cliente adapta e revende com sua marca.",cat:"Comercial & logística"},
+  {t:"BL",full:"Bill of Lading",def:"Conhecimento de embarque marítimo — o \"RG\" da carga; prova o contrato de transporte e a posse.",cat:"Comercial & logística"},
+  {t:"AWB",full:"Air Waybill",def:"Conhecimento de embarque aéreo, equivalente ao BL para transporte por avião.",cat:"Comercial & logística"},
+  {t:"Proforma",full:"Proforma Invoice",def:"Fatura pró-forma: orçamento formal do fornecedor com produto, valor, Incoterm e dados bancários.",cat:"Comercial & logística"},
+  {t:"demurrage",full:"Demurrage (sobrestadia)",def:"Multa diária por atraso na devolução do contêiner ao armador.",cat:"Comercial & logística"},
+  {t:"QC",full:"Quality Control",def:"Controle de qualidade — inspeção da produção antes do embarque.",cat:"Qualidade & produto"},
+  {t:"GSM",full:"Grams per Square Meter",def:"Gramatura do tecido (g/m²); indica peso/espessura do nylon ou forro.",cat:"Qualidade & produto"},
+  {t:"Pantone",full:"Pantone Matching System",def:"Padrão internacional de cores; usado para especificar a cor exata da bolsa.",cat:"Qualidade & produto"},
+  {t:"BSCI",full:"Business Social Compliance Initiative",def:"Certificação de auditoria social da cadeia produtiva (condições de trabalho).",cat:"Qualidade & produto"},
+  {t:"Sedex",full:"Supplier Ethical Data Exchange",def:"Plataforma/auditoria de práticas éticas e responsáveis de fornecedores.",cat:"Qualidade & produto"},
+  {t:"Drawback",full:"Regime de Drawback",def:"Regime que suspende/isenta tributos de insumos importados quando o produto final é exportado.",cat:"Regimes & inteligência"},
+];
+const GMAP={}; GLOSSARY.forEach(g=>GMAP[g.t]=g);
+
+/* ============================ CONFIG / API ============================ */
+const CFG=window.BB_CONFIG||{};
+const WORKER=String(CFG.workerUrl||'').replace(/\/+$/,'');
+const CONFIGURED=/^https?:\/\//.test(WORKER) && !/SEU_|exemplo|example/i.test(WORKER);
+
+let authToken='',authUser='';
+try{authToken=localStorage.getItem('bb_token')||'';authUser=localStorage.getItem('bb_user')||'';}catch(e){}
+function setAuth(token,name){authToken=token||'';authUser=name||'';try{localStorage.setItem('bb_token',authToken);localStorage.setItem('bb_user',authUser);}catch(e){}}
+function clearAuth(){authToken='';authUser='';try{localStorage.removeItem('bb_token');localStorage.removeItem('bb_user');}catch(e){}}
+async function api(path,opts){
+  opts=opts||{};
+  const headers=Object.assign({'Content-Type':'application/json'},opts.headers||{});
+  if(authToken) headers['Authorization']='Bearer '+authToken;
+  const res=await fetch(WORKER+path,Object.assign({},opts,{headers}));
+  let data=null;try{data=await res.json();}catch(e){}
+  if(res.status===401){const e=new Error('auth');e.code='auth';e.data=data;throw e;}
+  if(!res.ok){const e=new Error('http');e.code=(data&&data.error)||'http';e.status=res.status;e.data=data;throw e;}
+  return data;
+}
+async function authPost(path,body){
+  const res=await fetch(WORKER+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  let data=null;try{data=await res.json();}catch(e){}
+  if(!res.ok){const e=new Error('http');e.code=(data&&data.error)||'http';e.status=res.status;e.data=data;throw e;}
+  return data;
+}
+
+/* ============================ HELPERS ============================ */
+const $=s=>document.querySelector(s);
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const money=(n,cur)=>(cur||'R$')+' '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const usd=n=>'US$ '+(n||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+const usdC=n=>{n=n||0; if(n>=1e6)return 'US$ '+(n/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' mi'; if(n>=1e3)return 'US$ '+(n/1e3).toLocaleString('pt-BR',{maximumFractionDigits:0})+' mil'; return 'US$ '+Math.round(n);};
+const ic=(name,cls)=>`<i data-lucide="${name}"${cls?' class="'+cls+'"':''}></i>`;
+function icons(){try{if(window.lucide)lucide.createIcons();}catch(e){}}
+
+/* ============================ TABS ============================ */
+const TABS=[
+  {id:"overview",label:"Visão geral",ic:"sparkles"},
+  {id:"hubs",label:"Polos & cidades",ic:"map-pin"},
+  {id:"suppliers",label:"Fornecedores",ic:"factory"},
+  {id:"mercado",label:"Mercado ao vivo",ic:"trending-up"},
+  {id:"calc",label:"Custo & viabilidade",ic:"calculator"},
+  {id:"import",label:"Passo a passo",ic:"route"},
+  {id:"intel",label:"Inteligência & DD",ic:"radar"},
+  {id:"glossary",label:"Glossário",ic:"book-open"},
+];
+let resetToken='';
+let active=(location.hash||'').replace('#','');
+if(/^reset=/.test(active)){resetToken=active.slice(6);active='suppliers';}
+if(!TABS.find(t=>t.id===active)) active='overview';
+const tabsEl=$('#tabs');
+TABS.forEach(t=>{const b=el('button',null,`${ic(t.ic)}${t.label}`);b.setAttribute('role','tab');b.dataset.id=t.id;b.onclick=()=>go(t.id);tabsEl.appendChild(b);});
+function go(id){active=id;location.hash=id;render();closeSide();}
+window.addEventListener('hashchange',()=>{const h=(location.hash||'').replace('#','');if(/^reset=/.test(h)){resetToken=h.slice(6);active='suppliers';render();return;}if(h&&h!==active&&TABS.find(t=>t.id===h)){active=h;render();}});
+
+/* ---- tema (dark padrão) + menu lateral ---- */
+function curTheme(){return document.documentElement.getAttribute('data-theme')||'dark';}
+function updThemeBtns(){const t=curTheme();document.querySelectorAll('[data-theme-btn]').forEach(b=>{const wide=b.dataset.themeLabel;b.innerHTML=ic(t==='dark'?'sun':'moon')+(wide?('<span>'+(t==='dark'?'Tema claro':'Tema escuro')+'</span>'):'');});icons();}
+function setTheme(t){document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('bb_theme',t);}catch(e){}updThemeBtns();}
+document.querySelectorAll('[data-theme-btn]').forEach(b=>b.onclick=()=>setTheme(curTheme()==='dark'?'light':'dark'));
+updThemeBtns();
+const sidebar=$('#sidebar'),overlay=$('#overlay');
+function openSide(){sidebar.classList.add('open');overlay.classList.add('open');}
+function closeSide(){sidebar.classList.remove('open');overlay.classList.remove('open');}
+$('#hamb').onclick=openSide;overlay.onclick=closeSide;
+
+const VIEWS={};
+function render(){
+  [...tabsEl.children].forEach(b=>b.setAttribute('aria-selected',b.dataset.id===active?'true':'false'));
+  const v=$('#views');v.innerHTML='';
+  v.appendChild(VIEWS[active]());
+  applyGlossary(v);icons();
+  window.scrollTo({top:0,behavior:'instant'});
+}
+function lead(eyebrowIcon,eyebrow,title,desc){
+  const d=el('div','lead');
+  d.innerHTML=`<div class="eyebrow">${ic(eyebrowIcon)} ${eyebrow}</div><h2>${title}</h2><p>${desc}</p>`;
+  return d;
+}
+
+/* ============================ VISÃO GERAL ============================ */
+VIEWS.overview=()=>{
+  const w=el('div','panel-view');
+  w.appendChild(lead("sparkles","Blendibox · comércio exterior","Encontre, avalie e importe de fábricas de bolsas na China",
+    "Um painel único para mapear os polos certos para bolsas puffer, acompanhar fornecedores, simular o custo real de importação, ver dados oficiais de importação ao vivo e seguir o passo a passo aduaneiro sem surpresas."));
+  const stats=el('div','grid g-4');
+  const total=suppliers.length;
+  const sampling=suppliers.filter(s=>['amostra','negociando'].includes(s.status)).length;
+  const avg=total?(suppliers.reduce((a,s)=>a+scoreOf(s),0)/total):0;
+  [["map-pin",HUBS.length,"polos mapeados"],["factory",total,"fornecedores no radar"],["flask-conical",sampling,"em amostra/negociação"],["star",avg?avg.toFixed(1):"—","nota média"]].forEach(([k,n,l])=>{
+    const s=el('div','stat');s.innerHTML=`<div class="ic">${ic(k)}</div><div class="n">${n}</div><div class="l">${l}</div>`;stats.appendChild(s);
+  });
+  w.appendChild(stats);
+  const pbox=el('div');
+  pbox.innerHTML=`<h3 style="font-size:16px;margin-bottom:10px">Os 3 pilares da inteligência em importação</h3>`;
+  const p=el('div','pillars');
+  [["globe","Inteligência de mercado","Identificar fábricas globais, comparar preços e mapear polos alternativos para não depender de um único fornecedor."],
+   ["receipt","Inteligência fiscal/NCM","Enquadrar a NCM correta e usar regimes especiais (Ex-Tarifário, Drawback) para reduzir imposto legalmente."],
+   ["shield-check","Inteligência aduaneira","Documentação sem erro, DUIMP e compliance para evitar canal vermelho/cinza e retenção de carga."]].forEach(([k,h,t])=>{
+    const c=el('div','pillar');c.innerHTML=`<div class="ic">${ic(k)}</div><h4>${h}</h4><p>${t}</p>`;p.appendChild(c);
+  });
+  pbox.appendChild(p);w.appendChild(pbox);
+  const quick=el('div','grid g-2');
+  const q1=el('button','card pad',`<h3 style="font-size:16px;display:flex;align-items:center;gap:8px">${ic('trending-up')} Dados reais de importação</h3>
+    <p style="color:var(--ink-soft);font-size:13px;margin-top:6px">Veja quanto o Brasil importa de bolsas por NCM, de quais países e o preço médio US$/kg — direto do Comex Stat.</p>
+    <span class="pill cyan" style="margin-top:10px">Abrir Mercado ao vivo →</span>`);
+  q1.style.textAlign='left';q1.style.cursor='pointer';q1.onclick=()=>go('mercado');
+  const q2=el('button','card pad',`<h3 style="font-size:16px;display:flex;align-items:center;gap:8px">${ic('calculator')} Simular custo landed</h3>
+    <p style="color:var(--ink-soft);font-size:13px;margin-top:6px">Custo real por bolsa no seu armazém, com II, IPI, PIS, COFINS e ICMS — e se a parceria fecha a margem.</p>
+    <span class="pill accent" style="margin-top:10px">Abrir calculadora →</span>`);
+  q2.style.textAlign='left';q2.style.cursor='pointer';q2.onclick=()=>go('calc');
+  quick.appendChild(q1);quick.appendChild(q2);w.appendChild(quick);
+  return w;
+};
+
+/* ============================ POLOS ============================ */
+let hubFilter={fit:0,sort:'fit'};
+VIEWS.hubs=()=>{
+  const w=el('div','panel-view');
+  w.appendChild(lead("map-pin","Mapa de fornecimento","Polos e cidades da China para bolsas",
+    "Cada polo tem uma vocação. Para a Blendibox puffer, priorize quem domina matelassê e enchimento (Pinghu, Nantong, Quanzhou) e use Baigou/Hebei para escalar volume com preço."));
+  const bar=el('div','card pad');
+  const f=el('div','filters');
+  f.innerHTML=`<label class="fld"><span>Aderência puffer mínima</span>
+     <select id="fFit"><option value="0">Todos</option><option value="3">★★★ ou mais</option><option value="4">★★★★ ou mais</option><option value="5">★★★★★ só</option></select></label>
+     <label class="fld"><span>Ordenar por</span>
+     <select id="fSort"><option value="fit">Aderência puffer</option><option value="price">Preço (menor)</option><option value="export">Prontidão export</option></select></label>`;
+  bar.appendChild(f);w.appendChild(bar);
+  const grid=el('div','grid g-3');grid.id='hubGrid';w.appendChild(grid);
+  drawHubs(grid);
+  f.querySelector('#fFit').value=hubFilter.fit;f.querySelector('#fSort').value=hubFilter.sort;
+  f.querySelector('#fFit').onchange=e=>{hubFilter.fit=+e.target.value;drawHubs(grid);};
+  f.querySelector('#fSort').onchange=e=>{hubFilter.sort=e.target.value;drawHubs(grid);};
+  return w;
+};
+function drawHubs(grid){
+  grid.innerHTML='';
+  let list=HUBS.filter(h=>h.fit>=hubFilter.fit);
+  if(hubFilter.sort==='fit') list.sort((a,b)=>b.fit-a.fit);
+  if(hubFilter.sort==='price') list.sort((a,b)=>a.price.length-b.price.length);
+  if(hubFilter.sort==='export') list.sort((a,b)=>(b.export.includes('Muito')?3:b.export.includes('Alto')?2:1)-(a.export.includes('Muito')?3:a.export.includes('Alto')?2:1));
+  list.forEach(h=>{
+    const c=el('div','card hub');
+    const dots=Array.from({length:5},(_,i)=>`<span class="dot ${i<h.fit?'on':''}"></span>`).join('');
+    c.innerHTML=`<div class="top"><div><h3>${h.name}</h3><div class="loc">${h.cn} · ${esc(h.prov)}</div></div>
+      <div style="text-align:right"><div class="fit" title="Aderência puffer">${dots}</div><div class="cn" style="margin-top:5px">${h.price}</div></div></div>
+      <div class="spec">${esc(h.spec)}</div>
+      <div class="tags">${h.tags.map(t=>`<span class="pill gray">${esc(t)}</span>`).join('')}</div>`;
+    c.onclick=()=>openHub(h);grid.appendChild(c);
+  });
+  if(!list.length) grid.appendChild(el('div','empty','Nenhum polo com esse filtro.'));
+  applyGlossary(grid);icons();
+}
+function openHub(h){
+  const b=$('#hubDrawerBody');
+  const dots=Array.from({length:5},(_,i)=>`<span class="dot ${i<h.fit?'on':''}"></span>`).join('');
+  b.innerHTML=`<button class="close" id="hubClose" aria-label="Fechar">${ic('x')}</button>
+    <h3>${h.name} <span style="font-size:14px;color:var(--ink-soft);font-weight:400">${h.cn}</span></h3>
+    <div class="loc" style="color:var(--ink-soft);font-size:13px;margin:4px 0 12px">${esc(h.prov)} · <span class="fit" style="vertical-align:middle">${dots}</span> aderência puffer</div>
+    <p style="font-size:13.5px;color:var(--ink-soft)">${esc(h.spec)}</p>
+    <dl class="kv" style="margin-top:14px">
+      <dt>Preço</dt><dd>${h.price}</dd><dt>Qualidade</dt><dd>${esc(h.quality)}</dd>
+      <dt>MOQ típico</dt><dd>${esc(h.moq)}</dd><dt>Export</dt><dd>${esc(h.export)}</dd>
+      <dt>Melhor para</dt><dd>${esc(h.bestFor)}</dd><dt>Como chegar</dt><dd>${esc(h.reach)}</dd></dl>
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+      <button class="btn primary" id="hubAdd">${ic('plus')} Cadastrar fornecedor deste polo</button></div>`;
+  $('#hubDrawer').classList.add('open');applyGlossary(b);icons();
+  $('#hubClose').onclick=closeHub;
+  $('#hubAdd').onclick=()=>{closeHub();openSupModal(null,h.name);};
+}
+function closeHub(){$('#hubDrawer').classList.remove('open');}
+$('#hubDrawer').onclick=e=>{if(e.target.id==='hubDrawer')closeHub();};
+
+/* ============================ FORNECEDORES ============================ */
+let suppliers=[];let useLocal=!CONFIGURED;let supLoaded=false;let supErr=null;let supStatusFilter=null;
+let authMode='login';let authMsg=null;
+const STATUSES=[["prospect","Prospect","gray"],["contatado","Contatado","cyan"],["amostra","Amostra","warn"],["negociando","Negociando","warn"],["aprovado","Aprovado","ok"],["rejeitado","Rejeitado","bad"]];
+const statusMeta=k=>STATUSES.find(s=>s[0]===k)||STATUSES[0];
+function scoreOf(s){const vals=[s.sQuality,s.sPrice,s.sComm,s.sRel].filter(x=>x>0);return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;}
+function saveLocal(){try{localStorage.setItem('bb_suppliers',JSON.stringify(suppliers));}catch(e){}}
+
+async function loadSuppliers(force){
+  if(useLocal){try{suppliers=JSON.parse(localStorage.getItem('bb_suppliers')||'[]');}catch(e){suppliers=[];}supLoaded=true;if(active==='suppliers'||active==='overview')render();return;}
+  if(!authToken){if(active==='suppliers')render();return;}
+  if(supLoaded&&!force)return;
+  try{const j=await api('/api/suppliers');suppliers=j.list||[];supErr=null;supLoaded=true;if(active==='suppliers'||active==='overview')render();}
+  catch(e){if(e.code==='auth'){clearAuth();supLoaded=false;}else{supErr='net';}if(active==='suppliers')render();}
+}
+async function upsertSupplier(data){
+  if(useLocal){if(data._id){const i=suppliers.findIndex(s=>s._id===data._id);if(i>=0)suppliers[i]=data;}else{data._id='s_'+Date.now();data.createdAt=Date.now();suppliers.unshift(data);}saveLocal();render();return;}
+  try{const j=await api('/api/suppliers',{method:'POST',body:JSON.stringify(data)});
+    const it=j.item;const i=suppliers.findIndex(s=>s._id===it._id);if(i>=0)suppliers[i]=it;else suppliers.unshift(it);
+    suppliers.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));render();}
+  catch(e){if(e.code==='auth'){clearAuth();supLoaded=false;render();}else alert('Falha ao salvar no servidor.');}
+}
+async function deleteSupplier(id){
+  if(useLocal){suppliers=suppliers.filter(s=>s._id!==id);saveLocal();render();return;}
+  try{await api('/api/suppliers?id='+encodeURIComponent(id),{method:'DELETE'});suppliers=suppliers.filter(s=>s._id!==id);render();}
+  catch(e){if(e.code==='auth'){clearAuth();supLoaded=false;render();}else alert('Falha ao excluir no servidor.');}
+}
+
+VIEWS.suppliers=()=>{
+  const w=el('div','panel-view');
+  w.appendChild(lead("factory","Radar de fornecedores","Acompanhe cada fábrica em negociação",
+    "Cadastre fornecedores, dê nota em qualidade, preço, comunicação e confiabilidade, e mova pelo funil até a aprovação."));
+
+  if(CONFIGURED && resetToken){ w.appendChild(authResetCard()); return w; }
+  if(!CONFIGURED){
+    w.appendChild(banner('warn','triangle-alert','Worker não configurado. Preencha <code>window.BB_CONFIG.workerUrl</code> no index.html com a URL do seu Cloudflare Worker para ativar o cadastro de usuários (login/senha). Por enquanto, os dados ficam salvos só neste navegador.'));
+  } else if(!authToken){
+    w.appendChild(authCard()); return w;
+  }
+
+  const head=el('div','sup-head');
+  const left=el('div',null,'<div style="display:flex;gap:7px;flex-wrap:wrap" id="supFilters"></div>');
+  const right=el('div',null,'');right.style.display='flex';right.style.gap='10px';right.style.alignItems='center';
+  if(!useLocal){const ub=el('div','userbar');const initial=(authUser||'?').trim().charAt(0).toUpperCase()||'?';ub.innerHTML=`<span class="av">${esc(initial)}</span><span>${esc(authUser||'usuário')}</span>`;right.appendChild(ub);}
+  const addBtn=el('button','btn primary',`${ic('plus')} Novo`);addBtn.onclick=()=>openSupModal();right.appendChild(addBtn);
+  if(!useLocal){const out=el('button','btn ghost sm',`${ic('log-out')} Sair`);out.onclick=()=>{clearAuth();supLoaded=false;suppliers=[];render();};right.appendChild(out);}
+  head.appendChild(left);head.appendChild(right);w.appendChild(head);
+
+  const fw=left.querySelector('#supFilters');
+  const allChip=el('button','btn ghost sm',`Todos (${suppliers.length})`);if(!supStatusFilter)allChip.classList.replace('ghost','primary');allChip.onclick=()=>{supStatusFilter=null;render();};fw.appendChild(allChip);
+  STATUSES.forEach(([k,lbl])=>{const n=suppliers.filter(s=>s.status===k).length;if(!n&&supStatusFilter!==k)return;const c=el('button','btn ghost sm',`${lbl} (${n})`);if(supStatusFilter===k)c.classList.replace('ghost','primary');c.onclick=()=>{supStatusFilter=(supStatusFilter===k?null:k);render();};fw.appendChild(c);});
+
+  if(!useLocal&&!supLoaded){w.appendChild(el('div','empty',`<span class="spin"></span> carregando...`));return w;}
+
+  let list=suppliers.slice();if(supStatusFilter)list=list.filter(s=>s.status===supStatusFilter);
+  if(!list.length){
+    const e=el('div','card empty');
+    e.innerHTML=`<div class="big">${ic('package-open')}</div><strong>Nenhum fornecedor ${supStatusFilter?'nesse status':'ainda'}.</strong>
+      <p style="margin-top:6px">Clique em <b>“Novo”</b> ou cadastre a partir de um polo na aba <b>Polos &amp; cidades</b>.</p>`;
+    w.appendChild(e);return w;
+  }
+  const grid=el('div','sup-grid');list.forEach(s=>grid.appendChild(supCard(s)));w.appendChild(grid);
+  return w;
+};
+
+/* ---- telas de autenticação ---- */
+function authCard(){
+  const c=el('div','card pad authwrap');
+  const tab=(m,l)=>`<button class="authtab ${authMode===m?'on':''}" data-m="${m}">${l}</button>`;
+  let form='';
+  if(authMode==='register'){
+    form=`<label class="fld"><span>Nome</span><input id="a_name" placeholder="Seu nome"></label>
+      <label class="fld"><span>E-mail</span><input id="a_email" type="email" autocomplete="email" placeholder="voce@empresa.com"></label>
+      <label class="fld"><span>Senha</span><input id="a_pass" type="password" autocomplete="new-password" placeholder="mínimo 6 caracteres"></label>
+      <label class="fld"><span>Código de acesso (opcional)</span><input id="a_code" placeholder="se a equipe exigir"></label>
+      <button class="btn primary" id="a_go">${ic('user-plus')} Criar conta</button>`;
+  } else if(authMode==='forgot'){
+    form=`<label class="fld"><span>E-mail</span><input id="a_email" type="email" placeholder="voce@empresa.com"></label>
+      <p style="font-size:12.5px;color:var(--ink-soft)">Enviaremos um link para redefinir sua senha (válido por 1 hora).</p>
+      <button class="btn primary" id="a_go">${ic('mail')} Enviar link</button>
+      <button class="linkbtn" id="a_back">← Voltar ao login</button>`;
+  } else {
+    form=`<label class="fld"><span>E-mail</span><input id="a_email" type="email" autocomplete="username" placeholder="voce@empresa.com"></label>
+      <label class="fld"><span>Senha</span><input id="a_pass" type="password" autocomplete="current-password" placeholder="••••••"></label>
+      <button class="btn primary" id="a_go">${ic('log-in')} Entrar</button>
+      <button class="linkbtn" id="a_forgot">Esqueci minha senha</button>`;
+  }
+  c.innerHTML=`<div class="authtabs">${tab('login','Entrar')}${tab('register','Cadastrar')}</div>
+    ${authMsg?`<div class="authmsg ${authMsg.ok?'ok':'err'}">${esc(authMsg.text)}</div>`:''}
+    <div class="authform">${form}</div>`;
+  c.querySelectorAll('.authtab').forEach(b=>b.onclick=()=>{authMode=b.dataset.m;authMsg=null;render();});
+  const emailEl=c.querySelector('#a_email');
+  const submit=()=>{
+    const email=(emailEl&&emailEl.value||'').trim();
+    if(authMode==='login') doLogin(email,c.querySelector('#a_pass').value);
+    else if(authMode==='register') doRegister(c.querySelector('#a_name').value.trim(),email,c.querySelector('#a_pass').value,(c.querySelector('#a_code')||{}).value||'');
+    else doForgot(email);
+  };
+  c.querySelector('#a_go').onclick=submit;
+  c.querySelectorAll('input').forEach(i=>i.onkeydown=e=>{if(e.key==='Enter')submit();});
+  const fb=c.querySelector('#a_forgot');if(fb)fb.onclick=()=>{authMode='forgot';authMsg=null;render();};
+  const bk=c.querySelector('#a_back');if(bk)bk.onclick=()=>{authMode='login';authMsg=null;render();};
+  setTimeout(()=>{if(emailEl)emailEl.focus();},0);
+  return c;
+}
+function authResetCard(){
+  const c=el('div','card pad authwrap');
+  c.innerHTML=`<h3 style="font-size:17px;display:flex;align-items:center;gap:8px;margin-bottom:4px">${ic('key-round')} Redefinir senha</h3>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px">Escolha uma nova senha para sua conta.</p>
+    ${authMsg?`<div class="authmsg ${authMsg.ok?'ok':'err'}">${esc(authMsg.text)}</div>`:''}
+    <div class="authform">
+      <label class="fld"><span>Nova senha</span><input id="r_pass" type="password" placeholder="mínimo 6 caracteres"></label>
+      <button class="btn primary" id="r_go">${ic('check')} Salvar nova senha</button>
+    </div>`;
+  const go=()=>doReset(resetToken,c.querySelector('#r_pass').value);
+  c.querySelector('#r_go').onclick=go;
+  c.querySelector('#r_pass').onkeydown=e=>{if(e.key==='Enter')go();};
+  return c;
+}
+async function doLogin(email,pass){
+  if(!email||!pass){authMsg={ok:false,text:'Preencha e-mail e senha.'};render();return;}
+  try{const j=await authPost('/api/auth/login',{email,password:pass});setAuth(j.token,j.name);authMsg=null;supLoaded=false;render();loadSuppliers(true);}
+  catch(e){authMsg={ok:false,text:e.code==='invalid'?'E-mail ou senha inválidos.':'Falha ao entrar. Verifique a conexão.'};render();}
+}
+async function doRegister(name,email,pass,code){
+  if(!name||!email||!pass){authMsg={ok:false,text:'Preencha nome, e-mail e senha.'};render();return;}
+  try{const j=await authPost('/api/auth/register',{name,email,password:pass,code});setAuth(j.token,j.name);authMsg=null;supLoaded=false;render();loadSuppliers(true);}
+  catch(e){const m={exists:'Esse e-mail já tem conta. Faça login.',weak:'Senha muito curta (mínimo 6).',bad_email:'E-mail inválido.',bad_code:'Código de acesso incorreto.'}[e.code]||'Falha ao criar conta.';authMsg={ok:false,text:m};render();}
+}
+async function doForgot(email){
+  if(!email){authMsg={ok:false,text:'Digite seu e-mail.'};render();return;}
+  try{await authPost('/api/auth/forgot',{email});authMode='login';authMsg={ok:true,text:'Se o e-mail estiver cadastrado, enviamos um link de recuperação.'};render();}
+  catch(e){authMsg={ok:false,text:'Falha ao enviar. Tente novamente.'};render();}
+}
+async function doReset(token,pass){
+  if(!pass||pass.length<6){authMsg={ok:false,text:'Senha muito curta (mínimo 6).'};render();return;}
+  try{await authPost('/api/auth/reset',{token,password:pass});resetToken='';location.hash='suppliers';authMode='login';authMsg={ok:true,text:'Senha redefinida! Faça login.'};render();}
+  catch(e){authMsg={ok:false,text:e.code==='invalid_token'?'Link inválido ou expirado. Peça outro.':'Falha ao redefinir.'};render();}
+}
+function banner(kind,icon,html){const b=el('div','banner '+(kind||''));b.innerHTML=`${ic(icon)}<span>${html}</span>`;return b;}
+function supCard(s){
+  const c=el('div','card sup');const sc=scoreOf(s);const sm=statusMeta(s.status);
+  const scColor=sc>=4?'var(--ok)':sc>=3?'var(--warn)':sc>0?'var(--bad)':'var(--gray)';
+  const scBg=sc>=4?'var(--ok-soft)':sc>=3?'var(--warn-soft)':sc>0?'var(--bad-soft)':'var(--gray-soft)';
+  c.innerHTML=`<div class="r1"><div><h4>${esc(s.name||'(sem nome)')}</h4><div class="meta">${esc(s.hub||'—')} ${s.productType?'· '+esc(s.productType):''}</div></div>
+      <span class="score-pill" style="color:${scColor};background:${scBg}">${sc?sc.toFixed(1):'—'}</span></div>
+    <div><span class="pill ${sm[2]}">${sm[1]}</span></div>
+    <div class="vals"><div>MOQ <b>${esc(s.moq||'—')}</b></div><div>FOB <b>${s.fob?('US$ '+s.fob):'—'}</b></div>
+      <div>Lead time <b>${esc(s.lead||'—')}</b></div><div>Amostra <b>${esc(s.sample||'—')}</b></div></div>
+    ${s.contact?`<div class="meta" style="word-break:break-all">${ic('contact')} ${esc(s.contact)}</div>`:''}
+    ${s.notes?`<div class="meta">${ic('sticky-note')} ${esc(s.notes)}</div>`:''}
+    <div class="acts"><button class="btn ghost sm" data-ed>${ic('pencil')} Editar</button><button class="btn ghost sm" data-del>${ic('trash-2')}</button></div>`;
+  c.querySelector('[data-ed]').onclick=()=>openSupModal(s);
+  const delBtn=c.querySelector('[data-del]');let armed=false,t=null;
+  delBtn.onclick=()=>{if(!armed){armed=true;delBtn.innerHTML='Confirmar?';delBtn.classList.replace('ghost','primary');t=setTimeout(()=>{armed=false;delBtn.innerHTML=ic('trash-2');delBtn.classList.replace('primary','ghost');icons();},3000);icons();return;}clearTimeout(t);deleteSupplier(s._id);};
+  return c;
+}
+function openSupModal(s,presetHub){
+  const edit=!!s;s=s||{};const mb=$('#supModalBody');
+  const opt=(v,l,cur)=>`<option value="${v}" ${cur===v?'selected':''}>${l}</option>`;
+  mb.innerHTML=`<h3>${edit?'Editar fornecedor':'Novo fornecedor'}</h3>
+    <div class="form-grid">
+      <label class="fld full"><span>Nome da fábrica / contato</span><input id="m_name" value="${esc(s.name||'')}" placeholder="ex.: Baigou Xingda Bags Co."></label>
+      <label class="fld"><span>Polo / cidade</span><input id="m_hub" value="${esc(s.hub||presetHub||'')}" list="hubList" placeholder="ex.: Baigou"></label>
+      <label class="fld"><span>Tipo de produto</span><input id="m_pt" value="${esc(s.productType||'')}" placeholder="ex.: bolsa puffer nylon"></label>
+      <label class="fld"><span>Status</span><select id="m_status">${STATUSES.map(([k,l])=>opt(k,l,s.status||'prospect')).join('')}</select></label>
+      <label class="fld"><span>MOQ</span><input id="m_moq" value="${esc(s.moq||'')}" placeholder="ex.: 500 pç/cor"></label>
+      <label class="fld"><span>FOB (US$/unid.)</span><input id="m_fob" type="number" step="0.01" value="${esc(s.fob||'')}" placeholder="6.80"></label>
+      <label class="fld"><span>Lead time</span><input id="m_lead" value="${esc(s.lead||'')}" placeholder="ex.: 35 dias"></label>
+      <label class="fld"><span>Status da amostra</span><input id="m_sample" value="${esc(s.sample||'')}" placeholder="ex.: solicitada"></label>
+      <label class="fld full"><span>Contato (WeChat / e-mail / Alibaba)</span><input id="m_contact" value="${esc(s.contact||'')}" placeholder="wechat / email / link"></label>
+      <label class="fld full"><span>Notas</span><textarea id="m_notes" placeholder="observações, condições, impressões...">${esc(s.notes||'')}</textarea></label>
+    </div>
+    <datalist id="hubList">${HUBS.map(h=>`<option value="${esc(h.name)}">`).join('')}</datalist>
+    <div style="margin-top:14px"><div style="font-family:var(--f-display);font-weight:600;font-size:12.5px;color:var(--ink-soft);margin-bottom:8px">AVALIAÇÃO (1–5)</div>
+      <div class="form-grid">${ratingRow('Qualidade','sQuality',s.sQuality)}${ratingRow('Preço','sPrice',s.sPrice)}${ratingRow('Comunicação','sComm',s.sComm)}${ratingRow('Confiabilidade','sRel',s.sRel)}</div></div>
+    <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:20px">
+      <button class="btn ghost" id="m_cancel">Cancelar</button><button class="btn primary" id="m_save">${edit?'Salvar':'Cadastrar'}</button></div>`;
+  $('#supModal').classList.add('open');
+  const ratings={sQuality:s.sQuality||0,sPrice:s.sPrice||0,sComm:s.sComm||0,sRel:s.sRel||0};
+  mb.querySelectorAll('.stars').forEach(st=>{const key=st.dataset.key;st.querySelectorAll('span').forEach((sp,i)=>{sp.onclick=()=>{ratings[key]=i+1;st.querySelectorAll('span').forEach((x,j)=>x.classList.toggle('on',j<=i));};});});
+  $('#m_cancel').onclick=closeSup;
+  $('#m_save').onclick=()=>{
+    const data=Object.assign({},s,{_id:s._id,name:$('#m_name').value.trim(),hub:$('#m_hub').value.trim(),productType:$('#m_pt').value.trim(),
+      status:$('#m_status').value,moq:$('#m_moq').value.trim(),fob:$('#m_fob').value?(+$('#m_fob').value):null,lead:$('#m_lead').value.trim(),
+      sample:$('#m_sample').value.trim(),contact:$('#m_contact').value.trim(),notes:$('#m_notes').value.trim(),
+      sQuality:ratings.sQuality,sPrice:ratings.sPrice,sComm:ratings.sComm,sRel:ratings.sRel});
+    if(!data.name){$('#m_name').focus();$('#m_name').style.borderColor='var(--bad)';return;}
+    upsertSupplier(data);closeSup();
+  };
+}
+function ratingRow(label,key,val){val=val||0;const stars=Array.from({length:5},(_,i)=>`<span class="${i<val?'on':''}">★</span>`).join('');return `<label class="fld"><span>${label}</span><div class="stars" data-key="${key}">${stars}</div></label>`;}
+function closeSup(){$('#supModal').classList.remove('open');}
+$('#supModal').onclick=e=>{if(e.target.id==='supModal')closeSup();};
+
+/* ============================ MERCADO AO VIVO ============================ */
+let mkt={ncm:'42022220',flow:'import',fromY:'2023',toY:'2025',data:null,loading:false,err:null};
+VIEWS.mercado=()=>{
+  const w=el('div','panel-view');
+  w.appendChild(lead("trending-up","Comex Stat · dados oficiais","Importação brasileira de bolsas, ao vivo",
+    "Dados reais do Comex Stat (MDIC): quanto o Brasil importou por NCM, de quais países e a que preço médio por kg. Use para validar a demanda, comparar origens e ter um preço de referência na negociação."));
+  if(!CONFIGURED){
+    w.appendChild(banner('warn','triangle-alert','Para os dados ao vivo, configure o Worker: edite <code>window.BB_CONFIG.workerUrl</code> no index.html com a URL do seu Cloudflare Worker (ele faz o proxy do Comex Stat e resolve o CORS). Veja o README.'));
+    return w;
+  }
+  const form=el('div','card pad');
+  form.innerHTML=`<div class="mkt-form">
+    <label class="fld"><span>NCM (8 dígitos)</span><input id="mkNcm" value="${esc(mkt.ncm)}" placeholder="42022220"></label>
+    <label class="fld"><span>Fluxo</span><select id="mkFlow"><option value="import" ${mkt.flow==='import'?'selected':''}>Importação</option><option value="export" ${mkt.flow==='export'?'selected':''}>Exportação</option></select></label>
+    <label class="fld"><span>De (ano)</span><input id="mkFrom" type="number" value="${mkt.fromY}" min="1997" max="2025"></label>
+    <label class="fld"><span>Até (ano)</span><input id="mkTo" type="number" value="${mkt.toY}" min="1997" max="2025"></label>
+    <button class="btn primary" id="mkGo">${ic('search')} Consultar</button></div>
+    <div style="font-size:11.5px;color:var(--ink-dim);margin-top:8px">Dicas de NCM: 42022220 (bolsas têxteis) · 42022210 (bolsas de plástico) · 42029200 (sacos de viagem/mochilas têxteis).</div>`;
+  w.appendChild(form);
+  const out=el('div');out.id='mktOut';w.appendChild(out);
+  drawMkt(out);
+  form.querySelector('#mkGo').onclick=()=>{
+    mkt.ncm=form.querySelector('#mkNcm').value.replace(/\D/g,'').slice(0,8);
+    mkt.flow=form.querySelector('#mkFlow').value;mkt.fromY=form.querySelector('#mkFrom').value;mkt.toY=form.querySelector('#mkTo').value;
+    runMkt(out);
+  };
+  return w;
+};
+async function runMkt(out){
+  mkt.loading=true;mkt.err=null;drawMkt(out);
+  try{
+    const qs=`?flow=${mkt.flow}&ncm=${mkt.ncm}&from=${mkt.fromY}-01&to=${mkt.toY}-12`;
+    const res=await fetch(WORKER+'/api/comexstat'+qs);
+    if(!res.ok)throw new Error('http');
+    mkt.data=await res.json();
+  }catch(e){mkt.err='Falha ao consultar o Comex Stat (verifique a URL do Worker).';mkt.data=null;}
+  mkt.loading=false;drawMkt(out);
+}
+function drawMkt(out){
+  out.innerHTML='';
+  if(mkt.loading){out.appendChild(el('div','card pad',`<span class="spin"></span> consultando Comex Stat...`));icons();return;}
+  if(mkt.err){out.appendChild(banner('warn','triangle-alert',esc(mkt.err)));icons();return;}
+  if(!mkt.data){out.appendChild(el('div','banner info',`${ic('info')}<span>Escolha a NCM e o período e clique em <b>Consultar</b>. Começa em 42022220 (bolsas têxteis — as mais próximas das puffer).</span>`));icons();return;}
+  const list=mkt.data.list||[];
+  if(!list.length){out.appendChild(el('div','card empty','Nenhum registro para essa NCM/período.'));return;}
+  // agrega por país (soma anos do intervalo)
+  const byC={};let totFob=0,totKg=0;
+  list.forEach(r=>{const c=r.country||'—';byC[c]=byC[c]||{fob:0,kg:0};byC[c].fob+=r.fob;byC[c].kg+=r.kg;totFob+=r.fob;totKg+=r.kg;});
+  const countries=Object.entries(byC).map(([c,v])=>({c,fob:v.fob,kg:v.kg,share:totFob?v.fob/totFob:0,price:v.kg?v.fob/v.kg:0})).sort((a,b)=>b.fob-a.fob);
+  const china=byC['China'];const chinaShare=china&&totFob?china.fob/totFob:0;
+  const avgPrice=totKg?totFob/totKg:0;
+  const desc=list[0].descricao||'';
+  const flowLabel=mkt.flow==='import'?'importou':'exportou';
+
+  const tiles=el('div','mkt-tiles');
+  [["dollar-sign",usdC(totFob),"Total "+(mkt.flow==='import'?'importado':'exportado')+" ("+mkt.fromY+"–"+mkt.toY+")"],
+   ["weight",(totKg/1000).toLocaleString('pt-BR',{maximumFractionDigits:0})+" t","Peso total"],
+   ["tag","US$ "+avgPrice.toLocaleString('pt-BR',{maximumFractionDigits:2})+"/kg","Preço médio de referência"],
+   ["globe",(chinaShare*100).toFixed(0)+"%","Participação da China"]].forEach(([k,v,l])=>{
+    const t=el('div','rtile');t.innerHTML=`<div class="l">${ic(k)} ${l}</div><div class="v">${v}</div>`;tiles.appendChild(t);
+  });
+  const head=el('div','card pad');
+  head.innerHTML=`<div style="font-size:13px;color:var(--ink-soft);margin-bottom:12px">NCM <b style="color:var(--ink)">${esc(mkt.ncm)}</b> — ${esc(desc)}. O Brasil ${flowLabel} de <b class="china">${esc(countries[0]?countries[0].c:'—')}</b> como principal origem.</div>`;
+  head.appendChild(tiles);
+  out.appendChild(head);
+
+  const max=Math.max(...countries.map(c=>c.fob),1);
+  const tbox=el('div','card pad');
+  tbox.innerHTML=`<h3 style="font-size:15px;margin-bottom:4px;display:flex;align-items:center;gap:8px">${ic('bar-chart-3')} Principais origens</h3>
+    <p style="font-size:12px;color:var(--ink-dim);margin-bottom:10px">Valor FOB acumulado no período, por país, com preço médio US$/kg.</p>`;
+  const rows=el('div');
+  countries.slice(0,12).forEach(c=>{
+    const isCh=c.c==='China';
+    const r=el('div','ctry-row');
+    r.innerHTML=`<div class="cn"><span class="flagdot" style="${isCh?'background:var(--pink)':''}"></span><b class="${isCh?'china':''}">${esc(c.c)}</b></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(c.fob/max*100).toFixed(1)}%;${isCh?'background:linear-gradient(90deg,#ff2e7e,#8b5cf6)':''}"></div></div>
+      <div class="mono" style="text-align:right">${usdC(c.fob)}<div style="font-size:11px;color:var(--ink-dim)">US$ ${c.price.toLocaleString('pt-BR',{maximumFractionDigits:2})}/kg</div></div>`;
+    rows.appendChild(r);
+  });
+  tbox.appendChild(rows);
+  tbox.appendChild(el('div','foot',`Fonte: Comex Stat / MDIC (dados oficiais). Valores FOB em US$. Atualizado via cache do Worker (6h).`));
+  out.appendChild(tbox);
+  applyGlossary(out);icons();
+}
+
+/* ============================ CALCULADORA ============================ */
+const CALC_DEF={fob:6.80,qty:1000,freight:1800,insurance:120,rate:5.40,ii:20,ipi:0,pis:2.10,cofins:9.65,icms:18,afrmm:8,siscomex:154.23,desp:2500,markup:2.8};
+let calc=Object.assign({},CALC_DEF);
+try{const sv=JSON.parse(localStorage.getItem('bb_calc')||'null');if(sv)calc=Object.assign({},CALC_DEF,sv);}catch(e){}
+VIEWS.calc=()=>{
+  const w=el('div','panel-view');
+  w.appendChild(lead("calculator","Viabilidade de importação","Quanto cada bolsa custa no seu armazém?",
+    "Calcule o custo landed por unidade com todos os tributos federais e o ICMS (cálculo \"por dentro\"). Ajuste as alíquotas conforme a NCM confirmada pelo seu despachante."));
+  const grid=el('div','calc');
+  const ins=el('div','calc-inputs card pad');
+  const field=(id,lbl)=>`<label class="fld"><span>${lbl}</span><input id="c_${id}" type="number" step="0.01" value="${calc[id]}"></label>`;
+  ins.innerHTML=`<div style="font-family:var(--f-display);font-weight:600;font-size:13px;color:var(--cyan)">Mercadoria</div>
+    <div class="inrow">${field('fob','FOB unit (US$)')}${field('qty','Quantidade')}</div>
+    <div class="inrow">${field('freight','Frete intl total (US$)')}${field('insurance','Seguro (US$)')}</div>${field('rate','Câmbio US$ → R$')}
+    <div style="font-family:var(--f-display);font-weight:600;font-size:13px;color:var(--cyan);margin-top:4px">Tributos (%)</div>
+    <div class="inrow">${field('ii','II %')}${field('ipi','IPI %')}</div>
+    <div class="inrow">${field('pis','PIS %')}${field('cofins','COFINS %')}</div>
+    <div class="inrow">${field('icms','ICMS %')}${field('afrmm','AFRMM % (frete mar.)')}</div>
+    <div style="font-family:var(--f-display);font-weight:600;font-size:13px;color:var(--cyan);margin-top:4px">Despesas (R$)</div>
+    <div class="inrow">${field('siscomex','Taxa Siscomex')}${field('desp','Despachante/outras')}</div>
+    <div style="font-family:var(--f-display);font-weight:600;font-size:13px;color:var(--cyan);margin-top:4px">Venda</div>${field('markup','Markup sobre custo (x)')}
+    <button class="btn ghost sm" id="c_reset" style="margin-top:6px">${ic('rotate-ccw')} Restaurar padrões</button>`;
+  grid.appendChild(ins);
+  const out=el('div','card pad');out.id='calcOut';grid.appendChild(out);w.appendChild(grid);
+  w.appendChild(banner('info','info','Valores padrão são estimativas para bolsas (NCM família 4202). As alíquotas reais dependem da NCM exata, do estado (ICMS) e de regimes especiais. Confirme com seu despachante. O AFRMM (8%) incide sobre o frete marítimo; zere-o em importação aérea.'));
+  ins.querySelectorAll('input').forEach(i=>i.oninput=()=>{const k=i.id.slice(2);calc[k]=i.value===''?0:(+i.value);try{localStorage.setItem('bb_calc',JSON.stringify(calc));}catch(e){}drawCalc(out);});
+  ins.querySelector('#c_reset').onclick=()=>{calc=Object.assign({},CALC_DEF);try{localStorage.removeItem('bb_calc');}catch(e){}go('calc');};
+  drawCalc(out);
+  return w;
+};
+function computeCalc(c){
+  const fobTotalUSD=(c.fob||0)*(c.qty||0);const freightBRL=(c.freight||0)*(c.rate||0);
+  const va=(fobTotalUSD+(c.freight||0)+(c.insurance||0))*(c.rate||0);
+  const ii=va*(c.ii||0)/100;const ipi=(va+ii)*(c.ipi||0)/100;const pis=va*(c.pis||0)/100;const cofins=va*(c.cofins||0)/100;
+  const afrmm=freightBRL*(c.afrmm||0)/100;const despBase=(c.siscomex||0)+(c.desp||0)+afrmm;const icmsRate=(c.icms||0)/100;
+  const icmsBase=icmsRate<1?(va+ii+ipi+pis+cofins+despBase)/(1-icmsRate):0;const icms=icmsBase*icmsRate;
+  const totalTrib=ii+ipi+pis+cofins+icms;const totalDesp=(c.siscomex||0)+(c.desp||0)+afrmm;const landed=va+totalTrib+totalDesp;
+  const perUnit=(c.qty?landed/c.qty:0);const retail=perUnit*(c.markup||0);
+  return {va,ii,ipi,pis,cofins,afrmm,icms,totalTrib,totalDesp,landed,perUnit,retail,fobUnitBRL:(c.fob||0)*(c.rate||0)};
+}
+function drawCalc(out){
+  const c=calc,r=computeCalc(c);
+  const tiles=`<div class="result-tiles">
+    <div class="rtile hero"><div class="l">Custo landed por bolsa</div><div class="v">${money(r.perUnit)}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.82);margin-top:4px">de ${money(r.fobUnitBRL)} FOB → <b>${r.fobUnitBRL?(r.perUnit/r.fobUnitBRL).toFixed(2):'—'}×</b> o preço de fábrica</div></div>
+    <div class="rtile"><div class="l">Custo total do lote</div><div class="v">${money(r.landed)}</div></div>
+    <div class="rtile"><div class="l">Tributos no total</div><div class="v">${money(r.totalTrib)}</div></div>
+    <div class="rtile"><div class="l">Valor aduaneiro (CIF)</div><div class="v">${money(r.va)}</div></div>
+    <div class="rtile"><div class="l">Preço sugerido (${(c.markup||0)}×)</div><div class="v" style="color:var(--cyan)">${money(r.retail)}</div></div></div>`;
+  const rows=[["Imposto de Importação (II)",r.ii],["IPI",r.ipi],["PIS-Importação",r.pis],["COFINS-Importação",r.cofins],["ICMS",r.icms],["AFRMM",r.afrmm],["Siscomex + despesas",(c.siscomex||0)+(c.desp||0)]];
+  const maxv=Math.max(...rows.map(x=>x[1]),1);
+  const bars=`<div class="bar-wrap">${rows.map(([l,v])=>`<div class="bar-row"><div>${l}</div><div class="bar-track"><div class="bar-fill" style="width:${(v/maxv*100).toFixed(1)}%"></div></div><div class="mono" style="text-align:right">${money(v)}</div></div>`).join('')}</div>`;
+  const table=`<table class="taxtable"><thead><tr><th>Componente</th><th>Valor (R$)</th></tr></thead><tbody>
+    <tr><td>Valor aduaneiro (CIF)</td><td class="mono">${money(r.va)}</td></tr>
+    <tr><td>+ II (${c.ii}%)</td><td class="mono">${money(r.ii)}</td></tr>
+    <tr><td>+ IPI (${c.ipi}%)</td><td class="mono">${money(r.ipi)}</td></tr>
+    <tr><td>+ PIS (${c.pis}%)</td><td class="mono">${money(r.pis)}</td></tr>
+    <tr><td>+ COFINS (${c.cofins}%)</td><td class="mono">${money(r.cofins)}</td></tr>
+    <tr><td>+ ICMS (${c.icms}% por dentro)</td><td class="mono">${money(r.icms)}</td></tr>
+    <tr><td>+ AFRMM + Siscomex + despesas</td><td class="mono">${money(r.totalDesp)}</td></tr>
+    <tr style="font-weight:700"><td>= Custo landed total</td><td class="mono">${money(r.landed)}</td></tr></tbody></table>`;
+  out.innerHTML=`<h3 style="font-size:16px;margin-bottom:12px">Resultado</h3>${tiles}
+    <h4 style="font-size:14px;margin:18px 0 2px">Composição dos tributos</h4>${bars}
+    <h4 style="font-size:14px;margin:18px 0 6px">Detalhamento</h4><div style="overflow-x:auto">${table}</div>`;
+  applyGlossary(out);icons();
+}
+
+/* ============================ PASSO A PASSO ============================ */
+VIEWS.import=()=>{
+  const w=el('div','panel-view');
+  w.appendChild(lead("route","Roteiro aduaneiro","As 10 etapas da importação, da compra à entrega",
+    "O caminho da bolsa, do pedido ao seu estoque — com o risco mais caro de cada etapa destacado. Hoje o desembaraço usa a DUIMP no Portal Único Siscomex."));
+  PHASES.forEach(ph=>{
+    const box=el('div','card pad phase');
+    box.innerHTML=`<div class="phase-h"><div class="phase-n">${ph.n}</div><h3>${esc(ph.title)}</h3></div>`;
+    ph.steps.forEach(s=>{const st=el('div','card step');st.style.background='var(--panel-2)';
+      st.innerHTML=`<div class="num">${s.num}</div><div><h4>${esc(s.h)}</h4><div class="b">${esc(s.b)}</div>
+        <div class="risk">${ic('triangle-alert')}<span><b>Risco:</b> ${esc(s.risk)}</span></div></div>`;box.appendChild(st);});
+    w.appendChild(box);
+  });
+  const can=el('div','card pad');
+  can.innerHTML=`<h3 style="font-size:16px;margin-bottom:4px">Canais de conferência (parametrização)</h3>
+    <p style="font-size:13px;color:var(--ink-soft);margin-bottom:12px">Após o registro da DUIMP, a Receita classifica a carga por risco:</p>`;
+  const cg=el('div','channels');
+  CANAIS.forEach(x=>{const c=el('div','chan');c.innerHTML=`<div class="emoji">${x.sq}</div><h5>${x.h}</h5><p>${esc(x.p)}</p>`;cg.appendChild(c);});
+  can.appendChild(cg);w.appendChild(can);
+  return w;
+};
+
+/* ============================ INTELIGÊNCIA & DD ============================ */
+VIEWS.intel=()=>{
+  const w=el('div','panel-view');
+  w.appendChild(lead("radar","Inteligência & due diligence","Onde achar fábricas e como não cair em cilada",
+    "Combine canais de sourcing com dados aduaneiros reais para achar quem já exporta puffer, valide o fornecedor com o checklist e use os modelos de mensagem para abrir conversa."));
+  const chBox=el('div','card pad');chBox.innerHTML=`<h3 style="font-size:16px;margin-bottom:12px">Canais de sourcing &amp; inteligência de mercado</h3>`;
+  const cg=el('div','channels');
+  CHANNELS.forEach(x=>{const c=el('div','chan');c.innerHTML=`<div class="sq">${ic(x.ic)}</div><h5>${esc(x.name)}</h5><p>${esc(x.desc)}</p>`;cg.appendChild(c);});
+  chBox.appendChild(cg);
+  chBox.appendChild(banner('info','lightbulb','Dica de ouro: use dados aduaneiros (Logcomex/Panjiva/ImportGenius) para listar fábricas chinesas que <b>já embarcam</b> bolsas acolchoadas para o exterior — você encontra fornecedores testados e vê o preço de referência. A aba <b>Mercado ao vivo</b> já traz o lado brasileiro (Comex Stat).'));
+  w.appendChild(chBox);
+  const reg=el('div','grid g-3');
+  [["tag","Ex-Tarifário","Redução temporária do II para bens sem produção nacional equivalente — vale checar para maquinário/insumos."],
+   ["recycle","Drawback","Suspende/isenta tributos de insumos importados se o produto final for exportado."],
+   ["file-check","NCM correta","A classificação define imposto e licença. Bolsas ficam na família 4202; confirme o subitem exato."]].forEach(([k,h,t])=>{
+    const c=el('div','card pad');c.innerHTML=`<div style="color:var(--cyan);font-size:20px">${ic(k)}</div><h4 style="font-size:14.5px;margin:9px 0 5px">${h}</h4><p style="font-size:13px;color:var(--ink-soft)">${t}</p>`;reg.appendChild(c);
+  });
+  w.appendChild(reg);
+  const ck=el('div','card pad');
+  ck.innerHTML=`<h3 style="font-size:16px;margin-bottom:6px">Checklist de due diligence do fornecedor</h3><p style="font-size:13px;color:var(--ink-soft);margin-bottom:6px">Marque conforme avança. Fica salvo neste navegador.</p>`;
+  let checks={};try{checks=JSON.parse(localStorage.getItem('bb_dd')||'{}');}catch(e){}
+  DD.forEach((t,i)=>{const row=el('label','check');row.innerHTML=`<input type="checkbox" ${checks['d'+i]?'checked':''}><span>${esc(t)}</span>`;row.querySelector('input').onchange=e=>{checks['d'+i]=e.target.checked;try{localStorage.setItem('bb_dd',JSON.stringify(checks));}catch(x){}};ck.appendChild(row);});
+  w.appendChild(ck);
+  const tp=el('div','card pad');tp.innerHTML=`<h3 style="font-size:16px;margin-bottom:4px">Modelos de mensagem</h3><p style="font-size:13px;color:var(--ink-soft);margin-bottom:10px">Copie e ajuste os campos [entre colchetes].</p>`;
+  TEMPLATES.forEach(t=>{
+    const box=el('div','tmpl');box.innerHTML=`<h4 style="font-size:14px">${esc(t.title)}</h4><button class="btn ghost sm copy">${ic('copy')} Copiar</button><pre>${esc(t.body)}</pre>`;
+    const btn=box.querySelector('.copy');
+    btn.onclick=()=>{const txt=t.body;const done=()=>{btn.innerHTML=ic('check')+' Copiado';icons();setTimeout(()=>{btn.innerHTML=ic('copy')+' Copiar';icons();},1500);};
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done).catch(()=>selectText(box.querySelector('pre')));else selectText(box.querySelector('pre'));};
+    tp.appendChild(box);
+  });
+  w.appendChild(tp);
+  return w;
+};
+function selectText(node){const r=document.createRange();r.selectNodeContents(node);const s=getSelection();s.removeAllRanges();s.addRange(r);}
+
+/* ============================ GLOSSÁRIO ============================ */
+let glossQ='';
+VIEWS.glossary=()=>{
+  const w=el('div','panel-view');
+  w.appendChild(lead("book-open","Dicionário do comércio exterior","Glossário das siglas e termos",
+    "As siglas que mais aparecem no sourcing e na importação. No restante do sistema, elas ficam sublinhadas — passe o mouse (ou toque) para ver o significado na hora."));
+  const bar=el('div','card pad');
+  bar.innerHTML=`<label class="fld"><span>Buscar termo</span><input id="gQ" style="max-width:360px" placeholder="ex.: NCM, FOB, ICMS, demurrage..." value="${esc(glossQ)}"></label>`;
+  w.appendChild(bar);
+  const grid=el('div','gloss-grid no-gloss');grid.id='gGrid';w.appendChild(grid);
+  drawGloss(grid);
+  const inp=bar.querySelector('#gQ');inp.oninput=e=>{glossQ=e.target.value;drawGloss(grid);};
+  setTimeout(()=>{if(glossQ){inp.focus();inp.setSelectionRange(glossQ.length,glossQ.length);}},0);
+  return w;
+};
+function drawGloss(grid){
+  grid.innerHTML='';const q=glossQ.trim().toLowerCase();
+  const list=GLOSSARY.filter(g=>!q||(g.t+' '+g.full+' '+g.def).toLowerCase().includes(q));
+  if(!list.length){grid.appendChild(el('div','empty','Nenhum termo encontrado.'));return;}
+  const cats=[...new Set(list.map(g=>g.cat))];
+  cats.forEach(cat=>{grid.appendChild(el('div','gcat',cat));list.filter(g=>g.cat===cat).forEach(g=>{const c=el('div','card gterm');c.innerHTML=`<div class="ab">${esc(g.t)}</div><div class="fn">${esc(g.full)}</div><div class="df">${esc(g.def)}</div>`;grid.appendChild(c);});});
+}
+
+/* ============================ TOOLTIP DE GLOSSÁRIO ============================ */
+const AUTO_KEYS=GLOSSARY.map(g=>g.t).filter(k=>/^[A-Za-zÀ-ÿ]{2,9}$/.test(k)).sort((a,b)=>b.length-a.length);
+const GLOSS_RE=new RegExp('\\b('+AUTO_KEYS.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')\\b');
+const SKIP_TAGS={SCRIPT:1,STYLE:1,PRE:1,TEXTAREA:1,INPUT:1,SELECT:1,OPTION:1,BUTTON:1,A:1,I:1};
+function applyGlossary(root){
+  if(!root)return;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(n){
+    if(!n.nodeValue||!n.nodeValue.trim())return NodeFilter.FILTER_REJECT;
+    let p=n.parentNode;while(p&&p!==root){if(p.nodeType===1){if(SKIP_TAGS[p.tagName])return NodeFilter.FILTER_REJECT;if(p.classList&&(p.classList.contains('term')||p.classList.contains('no-gloss')))return NodeFilter.FILTER_REJECT;}p=p.parentNode;}
+    return GLOSS_RE.test(n.nodeValue)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});
+  const targets=[];let cur;while((cur=walker.nextNode()))targets.push(cur);
+  const re=new RegExp(GLOSS_RE.source,'g');
+  targets.forEach(node=>{const txt=node.nodeValue;re.lastIndex=0;let m,last=0;const frag=document.createDocumentFragment();let any=false;
+    while((m=re.exec(txt))){frag.appendChild(document.createTextNode(txt.slice(last,m.index)));const span=document.createElement('span');span.className='term';span.dataset.t=m[1];span.textContent=m[1];span.setAttribute('tabindex','0');frag.appendChild(span);last=m.index+m[1].length;any=true;}
+    if(any){frag.appendChild(document.createTextNode(txt.slice(last)));node.parentNode.replaceChild(frag,node);}});
+}
+const tipEl=$('#tip');let tipActive=null;
+function showTip(span){const g=GMAP[span.dataset.t];if(!g)return;tipEl.innerHTML=`<b>${esc(g.t)} · ${esc(g.full)}</b>${esc(g.def)}`;tipEl.classList.add('show');
+  const r=span.getBoundingClientRect();const tw=tipEl.offsetWidth,th=tipEl.offsetHeight;let x=r.left+r.width/2-tw/2;x=Math.max(8,Math.min(x,innerWidth-tw-8));let y=r.top-th-8;if(y<8)y=r.bottom+8;tipEl.style.left=x+'px';tipEl.style.top=y+'px';}
+function hideTip(){tipEl.classList.remove('show');if(tipActive){tipActive.classList.remove('active');tipActive=null;}}
+document.addEventListener('mouseover',e=>{const s=e.target.closest&&e.target.closest('.term');if(s)showTip(s);});
+document.addEventListener('mouseout',e=>{if(e.target.closest&&e.target.closest('.term'))hideTip();});
+document.addEventListener('focusin',e=>{if(e.target.classList&&e.target.classList.contains('term'))showTip(e.target);});
+document.addEventListener('focusout',e=>{if(e.target.classList&&e.target.classList.contains('term'))hideTip();});
+document.addEventListener('click',e=>{const s=e.target.closest&&e.target.closest('.term');if(s){if(tipActive===s){hideTip();}else{hideTip();tipActive=s;s.classList.add('active');showTip(s);}}else if(tipActive){hideTip();}});
+window.addEventListener('scroll',hideTip,true);
+
+/* ============================ FOOTER / BOOT ============================ */
+$('#foot').innerHTML=`<strong>Blendibox Sourcing · China</strong> — ferramenta interna de apoio à decisão. Alíquotas, MOQs e preços são estimativas de referência e variam por NCM, estado, fornecedor e câmbio. Não substitui despachante aduaneiro e contador. Dados de mercado: Comex Stat/MDIC. Fornecedores: ${CONFIGURED?'contas de usuário (login/senha) via Worker + KV':'navegador local (configure o Worker para ativar contas)'}.`;
+
+loadSuppliers();
+render();
+</script>
+</body>
+</html>

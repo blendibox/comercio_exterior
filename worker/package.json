@@ -1,0 +1,13 @@
+{
+  "name": "blendibox-comex-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker — proxy do Comex Stat e rastreador de fornecedores (KV) do site Blendibox Sourcing.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.158.0"
+  }
+}

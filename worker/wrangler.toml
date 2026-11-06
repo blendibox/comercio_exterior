@@ -1,0 +1,25 @@
+name = "blendibox-comex-api"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# KV: guarda usuários, sessões, tokens de reset e os fornecedores.
+# (mantém o mesmo namespace que você já criou; só renomeei o binding para KV)
+kv_namespaces = [
+  { binding = "KV", id = "34169c088b9340e28dc1cc9fdc5f682e" }
+]
+
+[vars]
+# Origem do site no GitHub Pages (sem barra no final). Use "*" só para testar.
+ALLOWED_ORIGIN = "https://blendibox.github.io"
+
+# Remetente verificado no Resend. Para teste rápido pode usar "Blendibox <onboarding@resend.dev>"
+# (o Resend só entrega para o e-mail dono da conta nesse modo). Em produção, verifique seu domínio.
+FROM_EMAIL = "Blendibox <onboarding@resend.dev>"
+
+# URL do site para montar o link de recuperação de senha.
+# Página de projeto: inclua o nome do repo, ex.: https://blendibox.github.io/comercio_exterior/
+APP_URL = "https://blendibox.github.io/"
+
+# Secrets (NÃO vão aqui). Defina com:
+#   wrangler secret put RESEND_API_KEY     -> chave da API do Resend (envio de e-mail)
+#   wrangler secret put SIGNUP_CODE        -> (opcional) exige código no cadastro p/ travar o acesso

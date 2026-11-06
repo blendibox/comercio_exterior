@@ -18,7 +18,7 @@ FROM_EMAIL = "Blendibox <onboarding@resend.dev>"
 
 # URL do site para montar o link de recuperação de senha.
 # Página de projeto: inclua o nome do repo, ex.: https://blendibox.github.io/comercio_exterior/
-APP_URL = "https://blendibox.github.io/"
+APP_URL = "https://blendibox.github.io/comercio_exterior/"
 
 # Secrets (NÃO vão aqui). Defina com:
 #   wrangler secret put RESEND_API_KEY     -> chave da API do Resend (envio de e-mail)

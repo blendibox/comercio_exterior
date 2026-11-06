@@ -1546,6 +1546,33 @@ VIEWS.intel=()=>{
   chBox.appendChild(cg);
   chBox.appendChild(banner('info','lightbulb','Dica de ouro: use dados aduaneiros (Logcomex/Panjiva/ImportGenius) para listar fábricas chinesas que <b>já embarcam</b> bolsas acolchoadas para o exterior — você encontra fornecedores testados e vê o preço de referência. A aba <b>Mercado ao vivo</b> já traz o lado brasileiro (Comex Stat).'));
   w.appendChild(chBox);
+
+  const agBox=el('div','card pad');
+  const agList=arr=>arr.map(a=>`<div style="padding:9px 0;border-top:1px solid var(--line)"><b style="font-family:var(--f-display);font-size:13.5px">${esc(a[0])}</b> <span style="font-size:11.5px;color:var(--cyan)">· ${esc(a[1])}</span><div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px">${esc(a[2])}</div></div>`).join('');
+  agBox.innerHTML=`<h3 style="font-size:16px;margin-bottom:4px;display:flex;align-items:center;gap:8px">${ic('handshake')} Agentes de compra — vale a pena?</h3>
+    <p style="font-size:13px;color:var(--ink-soft);margin-bottom:12px"><b>Sim, para o uso certo</b> — e há dois tipos bem diferentes. Escolha pelo objetivo: <b>importar legal em volume</b> (agente comercial) ou <b>testar amostras do 1688</b> (agente digital).</p>
+    <div class="grid g-2">
+      <div style="padding:14px;border-radius:12px;background:var(--panel-2);border:1px solid var(--line)">
+        <span class="pill ok">① Importação legal BR↔China</span>
+        <p style="font-size:12px;color:var(--ink-soft);margin:8px 0 2px">Escritório na China (auditoria) + Brasil (desembaraço). Para revenda formal com CNPJ, RADAR e nota fiscal.</p>
+        ${agList([['China Gate','Pequeno/médio na legalidade','Galpão na China recebe de Baigou, confere e consolida em container compartilhado (LCL) p/ baratear o frete.'],['Guelcos','Marca própria (OEM/ODM)','Sourcing complexo, auditoria rigorosa e gestão ponta a ponta — vão à fábrica conferir costura/enchimento.'],['China Link Trading','Grandes volumes e busca de fornecedor','Verifica se a fábrica é real (anti-golpe) e negocia preço em escala.']])}
+      </div>
+      <div style="padding:14px;border-radius:12px;background:var(--panel-2);border:1px solid var(--line)">
+        <span class="pill warn">② Digital · 1688/Taobao · amostras</span>
+        <p style="font-size:12px;color:var(--ink-soft);margin:8px 0 2px">"Redirecionadores": compram no site chinês por você, fotografam, consolidam e enviam (aéreo por kg). Bom p/ testar.</p>
+        ${agList([['Rakumart','1688, lotes pequenos (PT/ES)','Compra no 1688 por você, inspeciona, consolida e envia.'],['Superbuy / Sugargoo','Amostras e envio expresso','Você cola o link do 1688/Taobao, eles compram em RMB, fotografam e juntam pacotes.'],['Fulfillmen / SourcinBox','E-commerce de volume / automação','Integram o estoque das fábricas com a sua operação, com QC e frete.']])}
+      </div>
+    </div>
+    <div class="banner warn" style="margin-top:12px">${ic('triangle-alert')}<span><b>Cuidado com os digitais:</b> muitos são usados pelo mercado de <b>réplicas</b> e o frete "porta a porta" costuma ser <b>informal</b> — não entra no seu CNPJ com nota (o tal "DDP cinza"). Ótimos p/ <b>amostra/teste</b>, ruins p/ importar <b>legal e em volume</b>.</span></div>
+    <div style="margin-top:14px"><div class="deep-h">O que um bom agente deve fazer em Baigou</div>
+      <ul class="deep-ul">
+        <li><b>Auditoria de fábrica:</b> confirmar que o fornecedor tem <b>máquina de costura computadorizada</b> (essencial pro acolchoado/quilted) e não é só um intermediário.</li>
+        <li><b>Inspeção de qualidade (QC):</b> testar <b>zíper</b> e vazamento do <b>enchimento</b> pelas costuras — abrir as caixas no armazém antes do embarque.</li>
+        <li><b>Consolidação:</b> juntar bolsas de Baigou + zíper/etiqueta de outra cidade (ex.: Yiwu) num só envio.</li>
+      </ul></div>
+    <div class="banner info" style="margin-top:12px">${ic('lightbulb')}<span><b>Para a Blendibox:</b> produção da marca (puffer OEM, volume) → <b>agente comercial BR↔China</b> (ou direto FOB/CIF + despachante no seu CNPJ). Amostras e testes do 1688 → <b>agente digital</b>. Sempre compare o <b>custo landed</b> (aba Custo), não só o preço.</span></div>`;
+  w.appendChild(agBox);
+
   const reg=el('div','grid g-3');
   [["tag","Ex-Tarifário","Redução temporária do II para bens sem produção nacional equivalente — vale checar para maquinário/insumos."],
    ["recycle","Drawback","Suspende/isenta tributos de insumos importados se o produto final for exportado."],

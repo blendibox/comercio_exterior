@@ -50,6 +50,7 @@ export default {
       if (p === "/api/auth/me") return await handleMe(request, env, cors);
 
       if (p === "/api/suppliers") return await handleSuppliers(request, url, env, cors);
+      if (p === "/api/data") return await handleData(request, url, env, cors);
       return json({ error: "not_found" }, 404, cors);
     } catch (err) {
       return json({ error: "server_error", detail: String(err && err.message || err) }, 500, cors);
@@ -270,5 +271,44 @@ async function handleSuppliers(request, url, env, cors) {
     return json({ ok: true }, 200, cors);
   }
 
+  return json({ error: "method_not_allowed" }, 405, cors);
+}
+
+/* ------------------------------------------------- Dados de fabricação (materiais, modelos, movimentações) */
+const COL_PREFIX = { materials: "mat:", models: "mod:", movements: "mov:" };
+async function handleData(request, url, env, cors) {
+  if (!env.KV) return json({ error: "kv_not_bound" }, 500, cors);
+  const user = await getUserFromRequest(request, env);
+  if (!user) return json({ error: "unauthorized" }, 401, cors);
+  const col = url.searchParams.get("col");
+  const pref = COL_PREFIX[col];
+  if (!pref) return json({ error: "bad_collection" }, 400, cors);
+
+  if (request.method === "GET") {
+    const listing = await env.KV.list({ prefix: pref });
+    const items = await Promise.all(listing.keys.map(async (k) => {
+      const v = await env.KV.get(k.name);
+      try { return JSON.parse(v); } catch (e) { return null; }
+    }));
+    const clean = items.filter(Boolean).sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+    return json({ ok: true, list: clean }, 200, cors);
+  }
+  if (request.method === "POST") {
+    const body = await readJson(request);
+    if (!body) return json({ error: "bad_json" }, 400, cors);
+    const id = (body._id && /^[\w-]{1,64}$/.test(body._id)) ? body._id : (col.slice(0, 3) + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7));
+    body._id = id;
+    if (!body.createdAt) body.createdAt = Date.now();
+    body.updatedAt = Date.now();
+    body.updatedBy = user.name || user.email;
+    await env.KV.put(pref + id, JSON.stringify(body));
+    return json({ ok: true, id, item: body }, 200, cors);
+  }
+  if (request.method === "DELETE") {
+    const id = url.searchParams.get("id");
+    if (!id || !/^[\w-]{1,64}$/.test(id)) return json({ error: "bad_id" }, 400, cors);
+    await env.KV.delete(pref + id);
+    return json({ ok: true }, 200, cors);
+  }
   return json({ error: "method_not_allowed" }, 405, cors);
 }

@@ -639,7 +639,7 @@ const CONFIGURED=/^https?:\/\//.test(WORKER) && !/SEU_|exemplo|example/i.test(WO
 let authToken='',authUser='';
 try{authToken=localStorage.getItem('bb_token')||'';authUser=localStorage.getItem('bb_user')||'';}catch(e){}
 function setAuth(token,name){authToken=token||'';authUser=name||'';try{localStorage.setItem('bb_token',authToken);localStorage.setItem('bb_user',authUser);}catch(e){}}
-function clearAuth(){authToken='';authUser='';try{localStorage.removeItem('bb_token');localStorage.removeItem('bb_user');}catch(e){}}
+function clearAuth(){authToken='';authUser='';try{localStorage.removeItem('bb_token');localStorage.removeItem('bb_user');}catch(e){}try{fabLoaded=false;materials=[];models=[];movements=[];}catch(e){}}
 async function api(path,opts){
   opts=opts||{};
   const headers=Object.assign({'Content-Type':'application/json'},opts.headers||{});
@@ -672,6 +672,7 @@ const TABS=[
   {id:"overview",label:"Visão geral",ic:"sparkles"},
   {id:"hubs",label:"Polos & cidades",ic:"map-pin"},
   {id:"suppliers",label:"Fornecedores",ic:"factory"},
+  {id:"fabrica",label:"Fabricação própria",ic:"hammer"},
   {id:"mercado",label:"Mercado ao vivo",ic:"trending-up"},
   {id:"ranking",label:"Ranking NCM",ic:"list-ordered"},
   {id:"classificacao",label:"Classificação NCM",ic:"tags"},
@@ -1529,6 +1530,177 @@ VIEWS.estrutura=()=>{
   c3.querySelector('#goHold').onclick=()=>go('holding');
   return w;
 };
+
+/* ============================ FABRICAÇÃO PRÓPRIA ============================ */
+const FAB_UNITS=['un','par','m','m²','cm','kg','g','rolo'];
+let materials=[],models=[],movements=[],fabLoaded=false,fabLoading=false,fabSub='materiais',fabErr=null;
+const matById=id=>materials.find(m=>m._id===id);
+const matLabel=m=>m?(m.nome+(m.cor?' — '+m.cor:'')):'(material removido)';
+const qfmt=n=>(+n||0).toLocaleString('pt-BR',{maximumFractionDigits:3});
+function showModal(html){$('#supModalBody').innerHTML=html;$('#supModal').classList.add('open');}
+function upd(arr,item){const i=arr.findIndex(x=>x._id===item._id);if(i>=0)arr[i]=item;else arr.unshift(item);}
+async function fabSave(col,data){const j=await api('/api/data?col='+col,{method:'POST',body:JSON.stringify(data)});return j.item;}
+async function fabDel(col,id){await api('/api/data?col='+col+'&id='+encodeURIComponent(id),{method:'DELETE'});}
+async function loadFab(force){
+  if(!CONFIGURED||!authToken)return;
+  if(fabLoading||(fabLoaded&&!force))return;
+  fabLoading=true;
+  try{const [m,md,mv]=await Promise.all([api('/api/data?col=materials'),api('/api/data?col=models'),api('/api/data?col=movements')]);
+    materials=m.list||[];models=md.list||[];movements=mv.list||[];fabLoaded=true;fabErr=null;}
+  catch(e){if(e.code==='auth'){clearAuth();fabLoaded=false;}else fabErr='Falha ao carregar os dados.';}
+  fabLoading=false;if(active==='fabrica')render();
+}
+function modelCost(md){
+  let custoMat=0;(md.itens||[]).forEach(it=>{const m=matById(it.matId);if(m)custoMat+=(+it.qty||0)*(+m.custo||0);});
+  const custoMO=((+md.moMin||0)/60)*(+md.moCustoHora||0);
+  const base=custoMat+custoMO;const overhead=base*((+md.rateioPct||0)/100);
+  const custoTotal=base+overhead;const preco=custoTotal*(1+((+md.margemPct||0)/100));
+  return {custoMat,custoMO,overhead,custoTotal,preco};
+}
+VIEWS.fabrica=()=>{
+  const w=el('div','panel-view');
+  w.appendChild(lead("hammer","Fabricação própria","Estoque, ficha técnica e produção",
+    "Controle materiais (com cores e unidades), monte a ficha técnica de cada modelo com custo e preço, e dê baixa automática no estoque ao produzir."));
+  if(!CONFIGURED){w.appendChild(banner('warn','triangle-alert','Configure o Worker (<code>window.BB_CONFIG.workerUrl</code>) e faça login para usar a fabricação na nuvem.'));return w;}
+  if(!authToken){w.appendChild(authCard());return w;}
+  if(fabErr){w.appendChild(banner('warn','triangle-alert',esc(fabErr)));}
+  if(!fabLoaded){loadFab();w.appendChild(el('div','card pad','<span class="spin"></span> carregando...'));icons();return w;}
+  const bar=el('div','userbar');bar.style.marginBottom='4px';bar.innerHTML=`<span style="font-size:12px;color:var(--ink-dim)">${materials.length} materiais · ${models.length} modelos</span>`;
+  const nav=el('div');nav.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px';
+  [['materiais','Estoque','package'],['modelos','Fichas técnicas','ruler'],['producao','Produzir','hammer'],['historico','Histórico','history']].forEach(([k,l,i])=>{
+    const b=el('button','btn '+(fabSub===k?'primary':'ghost')+' sm',`${ic(i)} ${l}`);b.onclick=()=>{fabSub=k;render();};nav.appendChild(b);});
+  w.appendChild(nav);
+  if(fabSub==='materiais')fabMateriais(w);
+  else if(fabSub==='modelos')fabModelos(w);
+  else if(fabSub==='producao')fabProducao(w);
+  else fabHistorico(w);
+  return w;
+};
+function fabMateriais(w){
+  const head=el('div','sup-head');head.innerHTML='<div style="font-size:13px;color:var(--ink-soft)">Zíper, cursor, tecido, enchimento... (por cor e unidade)</div>';
+  const add=el('button','btn primary',`${ic('plus')} Novo material`);add.onclick=()=>matModal();head.appendChild(add);w.appendChild(head);
+  if(!materials.length){w.appendChild(el('div','card empty',`<div class="big">${ic('package-open')}</div>Nenhum material ainda. Cadastre zíper, tecido, enchimento, ferragens...`));icons();return;}
+  const grid=el('div','sup-grid');
+  materials.forEach(m=>{const low=(+m.estoque||0)<=(+m.estoqueMin||0);const c=el('div','card sup');
+    c.innerHTML=`<div class="r1"><div><h4>${esc(matLabel(m))}</h4><div class="meta">${esc(m.unidade||'un')} · custo ${money(+m.custo||0)}</div></div>
+      <span class="score-pill" style="color:${low?'var(--bad)':'var(--ok)'};background:${low?'var(--bad-soft)':'var(--ok-soft)'}">${qfmt(m.estoque)}</span></div>
+      ${low?`<div><span class="pill bad">estoque baixo (mín ${qfmt(m.estoqueMin)})</span></div>`:''}
+      <div class="acts"><button class="btn ghost sm" data-buy>${ic('plus')} Comprar</button><button class="btn ghost sm" data-ed>${ic('pencil')}</button><button class="btn ghost sm" data-del>${ic('trash-2')}</button></div>`;
+    c.querySelector('[data-buy]').onclick=()=>buyModal(m);c.querySelector('[data-ed]').onclick=()=>matModal(m);
+    delArm(c.querySelector('[data-del]'),async()=>{await fabDel('materials',m._id);materials=materials.filter(x=>x._id!==m._id);render();});
+    grid.appendChild(c);});
+  w.appendChild(grid);icons();
+}
+function delArm(btn,fn){let ar=false,t;btn.onclick=()=>{if(!ar){ar=true;btn.innerHTML='Excluir?';btn.classList.replace('ghost','primary');t=setTimeout(()=>{ar=false;btn.innerHTML=ic('trash-2');btn.classList.replace('primary','ghost');icons();},3000);icons();return;}clearTimeout(t);fn();};}
+function matModal(m){const e=!!m;m=m||{};
+  showModal(`<h3>${e?'Editar material':'Novo material'}</h3><div class="form-grid">
+    <label class="fld full"><span>Nome</span><input id="x_nome" value="${esc(m.nome||'')}" placeholder="ex.: Zíper nº5"></label>
+    <label class="fld"><span>Cor (opcional)</span><input id="x_cor" value="${esc(m.cor||'')}" placeholder="ex.: Azul"></label>
+    <label class="fld"><span>Unidade</span><select id="x_un">${FAB_UNITS.map(u=>`<option ${m.unidade===u?'selected':''}>${u}</option>`).join('')}</select></label>
+    <label class="fld"><span>Custo unitário (R$)</span><input id="x_custo" type="number" step="0.0001" value="${m.custo!=null?m.custo:''}" placeholder="0,00"></label>
+    <label class="fld"><span>${e?'Estoque atual':'Estoque inicial'}</span><input id="x_est" type="number" step="0.001" value="${m.estoque!=null?m.estoque:0}"></label>
+    <label class="fld full"><span>Estoque mínimo (alerta)</span><input id="x_min" type="number" step="0.001" value="${m.estoqueMin!=null?m.estoqueMin:0}"></label>
+   </div><div style="display:flex;gap:9px;justify-content:flex-end;margin-top:18px"><button class="btn ghost" id="x_cancel">Cancelar</button><button class="btn primary" id="x_save">${e?'Salvar':'Cadastrar'}</button></div>`);
+  $('#x_cancel').onclick=closeSup;
+  $('#x_save').onclick=async()=>{const data=Object.assign({},m,{nome:$('#x_nome').value.trim(),cor:$('#x_cor').value.trim(),unidade:$('#x_un').value,custo:+$('#x_custo').value||0,estoque:+$('#x_est').value||0,estoqueMin:+$('#x_min').value||0});
+    if(!data.nome){$('#x_nome').focus();return;}try{const it=await fabSave('materials',data);upd(materials,it);closeSup();render();}catch(err){alert('Falha ao salvar.');}};
+}
+function buyModal(m){
+  showModal(`<h3>Comprar — ${esc(matLabel(m))}</h3>
+   <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px">Entrada de estoque. Atual: <b>${qfmt(m.estoque)} ${esc(m.unidade||'')}</b> · custo ${money(+m.custo||0)}</p>
+   <div class="form-grid"><label class="fld"><span>Quantidade comprada</span><input id="b_qty" type="number" step="0.001" placeholder="0"></label>
+    <label class="fld"><span>Custo unit. desta compra (R$)</span><input id="b_custo" type="number" step="0.0001" placeholder="vazio = manter"></label></div>
+   <div class="banner info" style="margin-top:10px">${ic('info')}<span>Se informar o custo, atualizo pela <b>média móvel</b> (mistura com o estoque atual).</span></div>
+   <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:16px"><button class="btn ghost" id="b_cancel">Cancelar</button><button class="btn primary" id="b_ok">${ic('plus')} Registrar entrada</button></div>`);
+  $('#b_cancel').onclick=closeSup;
+  $('#b_ok').onclick=async()=>{const qty=+$('#b_qty').value||0;if(qty<=0)return;const cc=$('#b_custo').value;const estAnt=+m.estoque||0;const custoAnt=+m.custo||0;
+    let novo=custoAnt;if(cc!==''){const cu=+cc||0;novo=(estAnt+qty)>0?((estAnt*custoAnt+qty*cu)/(estAnt+qty)):cu;}
+    try{const it=await fabSave('materials',Object.assign({},m,{estoque:estAnt+qty,custo:novo}));upd(materials,it);
+      const mov=await fabSave('movements',{tipo:'compra',matNome:matLabel(m),qtd:qty,unidade:m.unidade,valor:qty*(cc!==''?(+cc||0):custoAnt),data:Date.now()});upd(movements,mov);
+      closeSup();render();}catch(err){alert('Falha ao registrar.');}};
+}
+function fabModelos(w){
+  const head=el('div','sup-head');head.innerHTML='<div style="font-size:13px;color:var(--ink-soft)">Ficha técnica: materiais + mão de obra + rateio + margem</div>';
+  const add=el('button','btn primary',`${ic('plus')} Nova ficha`);add.onclick=()=>modelModal();head.appendChild(add);w.appendChild(head);
+  if(!materials.length){w.appendChild(banner('info','info','Cadastre os materiais primeiro (aba Estoque) para montar as fichas.'));}
+  if(!models.length){w.appendChild(el('div','card empty',`<div class="big">${ic('ruler')}</div>Nenhuma ficha técnica ainda.`));icons();return;}
+  const grid=el('div','sup-grid');
+  models.forEach(md=>{const r=modelCost(md);const c=el('div','card sup');
+    c.innerHTML=`<div class="r1"><div><h4>${esc(md.nome)}</h4><div class="meta">${(md.itens||[]).length} materiais · margem ${(+md.margemPct||0)}%</div></div>
+      <span class="score-pill" style="color:var(--cyan);background:var(--panel-hi)">${money(r.preco)}</span></div>
+      <div class="vals"><div>Custo mat. <b>${money(r.custoMat)}</b></div><div>Mão de obra <b>${money(r.custoMO)}</b></div><div>Rateio <b>${money(r.overhead)}</b></div><div>Custo total <b>${money(r.custoTotal)}</b></div></div>
+      <div class="acts"><button class="btn ghost sm" data-ed>${ic('pencil')} Editar</button><button class="btn ghost sm" data-del>${ic('trash-2')}</button></div>`;
+    c.querySelector('[data-ed]').onclick=()=>modelModal(md);
+    delArm(c.querySelector('[data-del]'),async()=>{await fabDel('models',md._id);models=models.filter(x=>x._id!==md._id);render();});
+    grid.appendChild(c);});
+  w.appendChild(grid);icons();
+}
+function modelModal(md){const e=!!md;md=md?JSON.parse(JSON.stringify(md)):{itens:[]};if(!md.itens)md.itens=[];
+  const opts=sel=>'<option value="">— material —</option>'+materials.map(m=>`<option value="${m._id}" ${sel===m._id?'selected':''}>${esc(matLabel(m))} (${esc(m.unidade||'')})</option>`).join('');
+  showModal(`<h3>${e?'Editar ficha técnica':'Nova ficha técnica'}</h3>
+    <label class="fld full" style="margin-bottom:12px"><span>Nome do modelo</span><input id="k_nome" value="${esc(md.nome||'')}" placeholder="ex.: Bolsa Puffer M"></label>
+    <div class="deep-h">Materiais usados</div><div id="k_bom"></div>
+    <button class="btn ghost sm" id="k_add" style="margin-top:8px">${ic('plus')} Adicionar material</button>
+    <div class="form-grid" style="margin-top:14px">
+      <label class="fld"><span>Mão de obra (min)</span><input id="k_momin" type="number" value="${md.moMin||0}"></label>
+      <label class="fld"><span>Custo mão de obra (R$/h)</span><input id="k_moh" type="number" step="0.01" value="${md.moCustoHora||0}"></label>
+      <label class="fld"><span>Rateio / custos fixos (%)</span><input id="k_rat" type="number" step="0.1" value="${md.rateioPct||0}"></label>
+      <label class="fld"><span>Margem de lucro (%)</span><input id="k_mar" type="number" step="0.1" value="${md.margemPct||0}"></label>
+    </div><div id="k_prev" style="margin-top:14px"></div>
+    <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:16px"><button class="btn ghost" id="k_cancel">Cancelar</button><button class="btn primary" id="k_save">${e?'Salvar':'Criar'}</button></div>`);
+  const bom=$('#k_bom');
+  function collect(){md.nome=$('#k_nome').value.trim();md.moMin=+$('#k_momin').value||0;md.moCustoHora=+$('#k_moh').value||0;md.rateioPct=+$('#k_rat').value||0;md.margemPct=+$('#k_mar').value||0;}
+  function prev(){collect();const r=modelCost(md);$('#k_prev').innerHTML=`<div class="result-tiles" style="grid-template-columns:1fr 1fr">
+      <div class="rtile"><div class="l">Custo total/un</div><div class="v" style="font-size:18px">${money(r.custoTotal)}</div></div>
+      <div class="rtile hero" style="grid-column:auto"><div class="l">Preço sugerido</div><div class="v" style="font-size:18px">${money(r.preco)}</div></div></div>`;}
+  function drawBom(){bom.innerHTML='';
+    md.itens.forEach((it,idx)=>{const m=matById(it.matId);const row=el('div');row.style.cssText='display:grid;grid-template-columns:1fr 92px auto;gap:8px;align-items:center;margin-bottom:8px';
+      row.innerHTML=`<select class="k_mat" data-i="${idx}">${opts(it.matId)}</select><input type="number" step="0.001" class="k_qty" data-i="${idx}" value="${it.qty!=null?it.qty:''}" placeholder="qtd ${m?('('+(m.unidade||'')+')'):''}"><button class="btn ghost sm k_rm" data-i="${idx}">${ic('x')}</button>`;
+      bom.appendChild(row);
+      if(m&&m.unidade==='m²'){const h=el('div');h.style.cssText='display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin:-2px 0 10px;font-size:11px;color:var(--ink-dim)';
+        h.innerHTML=`<input type="number" class="k_alt" data-i="${idx}" placeholder="altura cm" value="${it.alt!=null?it.alt:''}"><input type="number" class="k_larg" data-i="${idx}" placeholder="largura cm" value="${it.larg!=null?it.larg:''}"><span style="align-self:center">→ m²</span>`;bom.appendChild(h);}});
+    bom.querySelectorAll('.k_mat').forEach(s=>s.onchange=()=>{md.itens[+s.dataset.i].matId=s.value;drawBom();prev();});
+    bom.querySelectorAll('.k_qty').forEach(q=>q.oninput=()=>{md.itens[+q.dataset.i].qty=+q.value||0;prev();});
+    bom.querySelectorAll('.k_rm').forEach(b=>b.onclick=()=>{md.itens.splice(+b.dataset.i,1);drawBom();prev();});
+    bom.querySelectorAll('.k_alt,.k_larg').forEach(inp=>inp.oninput=()=>{const i=+inp.dataset.i,it=md.itens[i];if(inp.classList.contains('k_alt'))it.alt=+inp.value||0;else it.larg=+inp.value||0;if(it.alt&&it.larg)it.qty=+((it.alt/100)*(it.larg/100)).toFixed(4);drawBom();prev();});
+    icons();}
+  drawBom();prev();
+  $('#k_add').onclick=()=>{md.itens.push({matId:'',qty:0});drawBom();};
+  ['#k_momin','#k_moh','#k_rat','#k_mar'].forEach(s=>$(s).oninput=prev);
+  $('#k_cancel').onclick=closeSup;
+  $('#k_save').onclick=async()=>{collect();if(!md.nome){$('#k_nome').focus();return;}md.itens=(md.itens||[]).filter(it=>it.matId&&(+it.qty>0));try{const it=await fabSave('models',md);upd(models,it);closeSup();render();}catch(err){alert('Falha ao salvar.');}};
+}
+function fabProducao(w){
+  if(!models.length){w.appendChild(banner('info','info','Cadastre uma ficha técnica primeiro (aba Fichas técnicas).'));icons();return;}
+  const card=el('div','card pad');
+  card.innerHTML=`<div class="filters"><label class="fld" style="min-width:200px"><span>Modelo</span><select id="p_mod">${models.map(m=>`<option value="${m._id}">${esc(m.nome)}</option>`).join('')}</select></label>
+    <label class="fld"><span>Quantidade a produzir</span><input id="p_qty" type="number" value="1" min="1"></label>
+    <button class="btn primary" id="p_go">${ic('hammer')} Produzir</button></div><div id="p_prev" style="margin-top:12px"></div>`;
+  w.appendChild(card);
+  const q=s=>card.querySelector(s);
+  const prev=()=>{const md=models.find(m=>m._id===q('#p_mod').value);const n=+q('#p_qty').value||0;if(!md)return;let rows='',falta=false;
+    (md.itens||[]).forEach(it=>{const m=matById(it.matId);if(!m)return;const need=(+it.qty||0)*n;const ok=(+m.estoque||0)>=need;if(!ok)falta=true;
+      rows+=`<tr><td>${esc(matLabel(m))}</td><td class="mono">${qfmt(need)} ${esc(m.unidade||'')}</td><td class="mono" style="${ok?'':'color:var(--bad);font-weight:700'}">${qfmt(m.estoque)}</td></tr>`;});
+    const r=modelCost(md);
+    q('#p_prev').innerHTML=`<div style="overflow-x:auto"><table class="taxtable"><thead><tr><th>Material</th><th>Necessário</th><th>Em estoque</th></tr></thead><tbody>${rows||'<tr><td colspan=3 style="color:var(--ink-dim)">ficha sem materiais</td></tr>'}</tbody></table></div>
+      <div style="font-size:13px;color:var(--ink-soft);margin-top:8px">Custo da produção: <b>${money(r.custoTotal*n)}</b> · ${falta?'<span class="pill bad">estoque insuficiente</span>':'<span class="pill ok">estoque ok</span>'}</div>`;
+    q('#p_go').disabled=falta||n<=0;};
+  q('#p_mod').onchange=prev;q('#p_qty').oninput=prev;prev();
+  q('#p_go').onclick=async()=>{const md=models.find(m=>m._id===q('#p_mod').value);const n=+q('#p_qty').value||0;if(!md||n<=0)return;q('#p_go').disabled=true;
+    try{for(const it of (md.itens||[])){const m=matById(it.matId);if(!m)continue;const need=(+it.qty||0)*n;const saved=await fabSave('materials',Object.assign({},m,{estoque:(+m.estoque||0)-need}));upd(materials,saved);}
+      const r=modelCost(md);const mov=await fabSave('movements',{tipo:'producao',modeloNome:md.nome,qtd:n,valor:r.custoTotal*n,data:Date.now()});upd(movements,mov);
+      fabSub='historico';render();}catch(err){alert('Falha ao produzir.');render();}};
+  icons();
+}
+function fabHistorico(w){
+  if(!movements.length){w.appendChild(el('div','card empty',`<div class="big">${ic('history')}</div>Sem movimentações ainda.`));icons();return;}
+  const card=el('div','card pad');let rows='';
+  movements.slice(0,150).forEach(mv=>{const d=new Date(mv.data||mv.createdAt||0);const ds=isNaN(d.getTime())?'':d.toLocaleDateString('pt-BR');const isC=mv.tipo==='compra';
+    rows+=`<tr><td>${ds}</td><td><span class="pill ${isC?'ok':'warn'}">${isC?'Compra':'Produção'}</span></td><td>${esc(isC?(mv.matNome+' +'+qfmt(mv.qtd)+' '+(mv.unidade||'')):(mv.modeloNome+' ×'+mv.qtd))}</td><td class="mono" style="text-align:right">${money(+mv.valor||0)}</td></tr>`;});
+  card.innerHTML=`<h3 style="font-size:15px;margin-bottom:10px;display:flex;align-items:center;gap:8px">${ic('history')} Movimentações</h3>
+    <div style="overflow-x:auto"><table class="taxtable"><thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  w.appendChild(card);icons();
+}
 
 /* ============================ CALCULADORA ============================ */
 const CALC_DEF={fob:6.80,qty:1000,freight:1800,insurance:120,rate:5.40,ii:35,ipi:6.5,pis:2.10,cofins:9.65,icms:18,afrmm:8,siscomex:154.23,desp:2500,markup:2.8};

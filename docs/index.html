@@ -1178,7 +1178,8 @@ function simplesEff(rbt12){for(const f of SIMPLES_I){if(rbt12<=f.upTo)return Mat
 function regTaxes(rev,p){
   const margin=(p.margin||0)/100,opex=(p.opex||0)/100,icms=(p.icms||0)/100,folha=p.folha||0;
   const cost=rev*(1-margin);
-  const icmsLiq=icms*margin*rev;           // ICMS sobre valor agregado (crédito na entrada)
+  const icmsNormal=(p.venda==='atacado')?Math.min(icms,0.12):icms; // atacado SP: redução de base -> carga ~12%
+  const icmsLiq=icmsNormal*margin*rev;     // ICMS sobre valor agregado (só Presumido/Real; Simples não aproveita)
   const inss=0.288*folha;                  // INSS patronal ~20% + ~8,8% terceiros/RAT
   const rbt12=rev*12;const eff=simplesEff(rbt12);
   const simples=(eff==null)?null:eff*rev;  // DAS já inclui ICMS/PIS/COFINS/IRPJ/CSLL/CPP
@@ -1194,7 +1195,7 @@ function regTaxes(rev,p){
   return {simples,presumido,real,eff,icmsLiq,inss,lucro,cost};
 }
 function cheapestAt(rev,p){const t=regTaxes(rev,p);const o=[['Simples',t.simples],['Presumido',t.presumido],['Lucro Real',t.real]].filter(x=>x[1]!=null);o.sort((a,b)=>a[1]-b[1]);return o.length?o[0][0]:'—';}
-let reg={rev:50000,margin:55,opex:20,folha:5000,icms:18};
+let reg={rev:50000,margin:55,opex:20,folha:5000,icms:18,venda:'varejo'};
 VIEWS.regime=()=>{
   const w=el('div','panel-view');
   w.appendChild(lead("scale","Planejamento tributário","Qual regime compensa para a Blendibox?",
@@ -1205,11 +1206,13 @@ VIEWS.regime=()=>{
   const fld=(id,lbl,suf)=>`<label class="fld"><span>${lbl}${suf?' ('+suf+')':''}</span><input id="rg_${id}" type="number" step="0.01" value="${reg[id]}"></label>`;
   form.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end">
     ${fld('rev','Faturamento mensal','R$')}${fld('margin','Margem bruta','%')}${fld('opex','Despesas oper.','% receita')}${fld('folha','Folha','R$/mês')}${fld('icms','ICMS saída','%')}
+    <label class="fld"><span>Tipo de venda</span><select id="rg_venda"><option value="varejo" ${reg.venda==='varejo'?'selected':''}>Varejo (consumidor final)</option><option value="atacado" ${reg.venda==='atacado'?'selected':''}>Atacado / B2B em SP</option></select></label>
     <button class="btn ghost sm" id="rg_reset">${ic('rotate-ccw')} Restaurar</button></div>`;
   w.appendChild(form);
   const out=el('div');out.id='rgOut';w.appendChild(out);
   form.querySelectorAll('input').forEach(i=>i.oninput=()=>{const k=i.id.slice(3);reg[k]=i.value===''?0:(+i.value);drawReg(out);});
-  form.querySelector('#rg_reset').onclick=()=>{reg={rev:50000,margin:55,opex:20,folha:5000,icms:18};go('regime');};
+  const vsel=form.querySelector('#rg_venda');if(vsel)vsel.onchange=()=>{reg.venda=vsel.value;drawReg(out);};
+  form.querySelector('#rg_reset').onclick=()=>{reg={rev:50000,margin:55,opex:20,folha:5000,icms:18,venda:'varejo'};go('regime');};
   drawReg(out);
   return w;
 };
@@ -1262,7 +1265,9 @@ function drawReg(out){
     </ul>
     <div class="foot">Base: pareceres SEFAZ‑SP (RC 29562/2024, RC 16403/2017, RC 7574/2015) e Portaria CGSN 54/2025. Regras mudam e dependem do seu enquadramento — confirme com o contador.</div>`;
   out.innerHTML='';out.style.cssText='display:flex;flex-direction:column;gap:16px';
-  out.appendChild(cards);out.appendChild(ins);out.appendChild(tbl);out.appendChild(sp);
+  out.appendChild(cards);
+  if(reg.venda==='atacado') out.appendChild(banner('info','badge-check','<b>Atacado em SP:</b> redução de base aplicada — ICMS a <b>12%</b> no Presumido e no Lucro Real. O <b>Simples não aproveita</b> esse benefício (continua pela tabela do DAS), e a redução não vale para venda a consumidor final.'));
+  out.appendChild(ins);out.appendChild(tbl);out.appendChild(sp);
   applyGlossary(out);icons();
 }
 

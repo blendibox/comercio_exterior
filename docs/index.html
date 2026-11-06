@@ -1251,8 +1251,18 @@ function drawReg(out){
     <div style="overflow-x:auto"><table class="taxtable"><thead><tr><th>Faturamento/mês</th><th>Simples</th><th>Presumido</th><th>Lucro Real</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="foot">Modelo: Simples Anexo I (comércio); Presumido com PIS/COFINS 3,65%, IRPJ 15%+adic. sobre 8% e CSLL 9% sobre 12%; Real com PIS/COFINS 9,25% não‑cumulativo e IRPJ/CSLL sobre o lucro; ICMS pelo valor agregado (margem × alíquota); INSS patronal ~28,8% da folha. Estimativa — confirme com o contador.</div>`;
 
+  const sp=el('div','card pad');
+  sp.innerHTML=`<h3 style="font-size:15px;margin-bottom:8px;display:flex;align-items:center;gap:8px">${ic('map-pin')} Particularidades de São Paulo</h3>
+    <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--ink-soft);line-height:1.75">
+      <li><b>Redução de base de ICMS para bolsas</b> (Art. 30, Anexo II, RICMS/SP): derruba a carga de ICMS de 18% para <b>~12%</b> — mas só em <b>saídas internas de fabricante/atacadista</b> (não para consumidor final) e, em regra, <b>não no Simples</b>. Bolsas (Cap. 42) entram <b>mesmo sem couro</b>. É um motivo real para atacadista de bolsas em SP avaliar sair do Simples.</li>
+      <li><b>Sublimite do Simples: R$ 3,6 mi/ano.</b> Acima disso você continua no Simples para os tributos federais, mas <b>ICMS e ISS saem do DAS</b> e passam a ser recolhidos à parte (regime normal) — muda a conta nessa faixa.</li>
+      <li><b>ICMS‑ST:</b> SP vem excluindo itens da substituição tributária (Portarias SRE 64/2025 e 34/2026). Se a sua NCM 4202 estiver em ST, o ICMS é antecipado e as vendas seguintes saem sem ICMS. Confirme por NCM/CEST.</li>
+      <li><b>ICMS‑Importação:</b> 18% em SP, recolhido no desembaraço por GNRE (no Simples, por fora do DAS) — já está na aba Custo.</li>
+      <li><b>DIFAL:</b> vendas interestaduais a consumidor final (e‑commerce) têm diferencial de alíquota para o estado de destino.</li>
+    </ul>
+    <div class="foot">Base: pareceres SEFAZ‑SP (RC 29562/2024, RC 16403/2017, RC 7574/2015) e Portaria CGSN 54/2025. Regras mudam e dependem do seu enquadramento — confirme com o contador.</div>`;
   out.innerHTML='';out.style.cssText='display:flex;flex-direction:column;gap:16px';
-  out.appendChild(cards);out.appendChild(ins);out.appendChild(tbl);
+  out.appendChild(cards);out.appendChild(ins);out.appendChild(tbl);out.appendChild(sp);
   applyGlossary(out);icons();
 }
 

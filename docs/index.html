@@ -614,6 +614,7 @@ const GLOSSARY=[
   {t:"DPU",full:"Delivered at Place Unloaded (Entregue e Descarregado)",def:"Incoterm: igual ao DAP, mas o vendedor também descarrega a mercadoria no local de destino. (Antigo DAT.)",cat:"Comercial & logística"},
   {t:"DDP",full:"Delivered Duty Paid (Entregue com Impostos Pagos)",def:"Incoterm: o vendedor entrega na sua porta com tudo pago, inclusive os impostos de importação. Difícil de operar legalmente no Brasil (o importador de registro tem que ser brasileiro) — o que circula é o 'DDP cinza', informal e arriscado.",cat:"Comercial & logística"},
   {t:"MOQ",full:"Minimum Order Quantity",def:"Quantidade mínima de pedido que a fábrica aceita produzir, geralmente por cor/modelo.",cat:"Comercial & logística"},
+  {t:"lead time",full:"Lead Time (prazo de produção)",def:"Tempo entre o pedido confirmado e a mercadoria pronta/embarcada (produção e, às vezes, o embarque). Ex.: 'lead time de 35 dias'.",cat:"Comercial & logística"},
   {t:"OEM",full:"Original Equipment Manufacturer",def:"Fábrica produz conforme a especificação/projeto do cliente (produto da sua marca).",cat:"Comercial & logística"},
   {t:"ODM",full:"Original Design Manufacturer",def:"Fábrica oferece um design próprio que o cliente adapta e revende com sua marca.",cat:"Comercial & logística"},
   {t:"BL",full:"Bill of Lading",def:"Conhecimento de embarque marítimo — o \"RG\" da carga; prova o contrato de transporte e a posse.",cat:"Comercial & logística"},
@@ -628,6 +629,7 @@ const GLOSSARY=[
   {t:"Drawback",full:"Regime de Drawback",def:"Regime que suspende/isenta tributos de insumos importados quando o produto final é exportado.",cat:"Regimes & inteligência"},
 ];
 const GMAP={}; GLOSSARY.forEach(g=>GMAP[g.t]=g);
+const GKEY={}; GLOSSARY.forEach(g=>GKEY[g.t.toLowerCase()]=g.t);
 
 /* ============================ CONFIG / API ============================ */
 const CFG=window.BB_CONFIG||{};
@@ -1641,21 +1643,24 @@ function drawGloss(grid){
 }
 
 /* ============================ TOOLTIP DE GLOSSÁRIO ============================ */
-const AUTO_KEYS=GLOSSARY.map(g=>g.t).filter(k=>/^[A-Za-zÀ-ÿ]{2,9}$/.test(k)).sort((a,b)=>b.length-a.length);
-const GLOSS_RE=new RegExp('\\b('+AUTO_KEYS.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')\\b');
+const reEsc=k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const ACR_KEYS=GLOSSARY.map(g=>g.t).filter(k=>/^[A-Za-zÀ-ÿ]{2,9}$/.test(k)).sort((a,b)=>b.length-a.length);
+const PHRASE_KEYS=GLOSSARY.map(g=>g.t).filter(k=>/\s/.test(k)).sort((a,b)=>b.length-a.length);
+const ACR_RE=new RegExp('\\b('+ACR_KEYS.map(reEsc).join('|')+')\\b');           // siglas: caixa exata
+const PHRASE_RE=PHRASE_KEYS.length?new RegExp('\\b('+PHRASE_KEYS.map(reEsc).join('|')+')\\b','i'):null; // termos com espaço: qualquer caixa
 const SKIP_TAGS={SCRIPT:1,STYLE:1,PRE:1,TEXTAREA:1,INPUT:1,SELECT:1,OPTION:1,BUTTON:1,A:1,I:1};
-function applyGlossary(root){
-  if(!root)return;
+function wrapPass(root,baseRe,flags){
   const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(n){
     if(!n.nodeValue||!n.nodeValue.trim())return NodeFilter.FILTER_REJECT;
     let p=n.parentNode;while(p&&p!==root){if(p.nodeType===1){if(SKIP_TAGS[p.tagName])return NodeFilter.FILTER_REJECT;if(p.classList&&(p.classList.contains('term')||p.classList.contains('no-gloss')))return NodeFilter.FILTER_REJECT;}p=p.parentNode;}
-    return GLOSS_RE.test(n.nodeValue)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});
+    return baseRe.test(n.nodeValue)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});
   const targets=[];let cur;while((cur=walker.nextNode()))targets.push(cur);
-  const re=new RegExp(GLOSS_RE.source,'g');
+  const re=new RegExp(baseRe.source,flags);
   targets.forEach(node=>{const txt=node.nodeValue;re.lastIndex=0;let m,last=0;const frag=document.createDocumentFragment();let any=false;
-    while((m=re.exec(txt))){frag.appendChild(document.createTextNode(txt.slice(last,m.index)));const span=document.createElement('span');span.className='term';span.dataset.t=m[1];span.textContent=m[1];span.setAttribute('tabindex','0');frag.appendChild(span);last=m.index+m[1].length;any=true;}
+    while((m=re.exec(txt))){const canon=GKEY[m[1].toLowerCase()]||m[1];frag.appendChild(document.createTextNode(txt.slice(last,m.index)));const span=document.createElement('span');span.className='term';span.dataset.t=canon;span.textContent=m[1];span.setAttribute('tabindex','0');frag.appendChild(span);last=m.index+m[1].length;any=true;}
     if(any){frag.appendChild(document.createTextNode(txt.slice(last)));node.parentNode.replaceChild(frag,node);}});
 }
+function applyGlossary(root){if(!root)return;wrapPass(root,ACR_RE,'g');if(PHRASE_RE)wrapPass(root,PHRASE_RE,'gi');}
 const tipEl=$('#tip');let tipActive=null;
 function showTip(span){const g=GMAP[span.dataset.t];if(!g)return;tipEl.innerHTML=`<b>${esc(g.t)} · ${esc(g.full)}</b>${esc(g.def)}`;tipEl.classList.add('show');
   const r=span.getBoundingClientRect();const tw=tipEl.offsetWidth,th=tipEl.offsetHeight;let x=r.left+r.width/2-tw/2;x=Math.max(8,Math.min(x,innerWidth-tw-8));let y=r.top-th-8;if(y<8)y=r.bottom+8;tipEl.style.left=x+'px';tipEl.style.top=y+'px';}

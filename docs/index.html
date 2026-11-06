@@ -527,6 +527,10 @@ const GLOSSARY=[
   {t:"FOB",full:"Free On Board",def:"Incoterm em que o vendedor entrega a carga no porto de origem; frete e seguro internacionais ficam por conta do comprador.",cat:"Comercial & logística"},
   {t:"CIF",full:"Cost, Insurance and Freight",def:"Incoterm em que o vendedor paga custo, seguro e frete até o porto de destino.",cat:"Comercial & logística"},
   {t:"Incoterms",full:"International Commercial Terms",def:"Regras internacionais que definem quem paga o quê e onde o risco passa do vendedor ao comprador (FOB, CIF, EXW...).",cat:"Comercial & logística"},
+  {t:"EXW",full:"Ex Works (Na Fábrica)",def:"Incoterm: o vendedor só disponibiliza a mercadoria na fábrica. Você assume tudo — frete interno na origem, exportação, frete internacional, seguro e importação. Preço mais 'cru', máximo trabalho/risco pra você.",cat:"Comercial & logística"},
+  {t:"DAP",full:"Delivered At Place (Entregue no Local)",def:"Incoterm: o vendedor leva a mercadoria e assume frete e risco até um local combinado no destino, MAS a importação e os impostos ficam por sua conta.",cat:"Comercial & logística"},
+  {t:"DPU",full:"Delivered at Place Unloaded (Entregue e Descarregado)",def:"Incoterm: igual ao DAP, mas o vendedor também descarrega a mercadoria no local de destino. (Antigo DAT.)",cat:"Comercial & logística"},
+  {t:"DDP",full:"Delivered Duty Paid (Entregue com Impostos Pagos)",def:"Incoterm: o vendedor entrega na sua porta com tudo pago, inclusive os impostos de importação. Difícil de operar legalmente no Brasil (o importador de registro tem que ser brasileiro) — o que circula é o 'DDP cinza', informal e arriscado.",cat:"Comercial & logística"},
   {t:"MOQ",full:"Minimum Order Quantity",def:"Quantidade mínima de pedido que a fábrica aceita produzir, geralmente por cor/modelo.",cat:"Comercial & logística"},
   {t:"OEM",full:"Original Equipment Manufacturer",def:"Fábrica produz conforme a especificação/projeto do cliente (produto da sua marca).",cat:"Comercial & logística"},
   {t:"ODM",full:"Original Design Manufacturer",def:"Fábrica oferece um design próprio que o cliente adapta e revende com sua marca.",cat:"Comercial & logística"},
@@ -1490,6 +1494,25 @@ VIEWS.glossary=()=>{
   const w=el('div','panel-view');
   w.appendChild(lead("book-open","Dicionário do comércio exterior","Glossário das siglas e termos",
     "As siglas que mais aparecem no sourcing e na importação. No restante do sistema, elas ficam sublinhadas — passe o mouse (ou toque) para ver o significado na hora."));
+
+  const inco=el('div','card pad no-gloss');
+  const chip=t=>`<span class="pill accent" style="font-size:12.5px">${t}</span>`;
+  inco.innerHTML=`<h3 style="font-size:16px;display:flex;align-items:center;gap:8px;margin-bottom:4px">${ic('arrow-left-right')} Incoterms — do que te dá MAIS ao que te dá MENOS trabalho</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:12px 0;font-family:var(--f-display);font-weight:600">
+      ${chip('EXW')}<span style="color:var(--ink-dim)">→</span>${chip('FOB')}<span style="color:var(--ink-dim)">→</span>${chip('CIF')}<span style="color:var(--ink-dim)">→</span>${chip('DAP')}<span style="color:var(--ink-dim)">→</span>${chip('DPU')}<span style="color:var(--ink-dim)">→</span>${chip('DDP')}
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-dim);margin-top:-6px">
+      <span>◀ você assume mais</span><span>vendedor assume mais ▶</span></div>
+    <div style="overflow-x:auto;margin-top:12px"><table class="taxtable"><thead><tr><th>Incoterm</th><th>Vendedor paga/entrega até…</th><th>O que sobra pra você</th></tr></thead><tbody>
+      <tr><td><b>EXW</b></td><td>Deixa pronto na fábrica</td><td>Frete interno origem, exportação, frete int'l, seguro e importação</td></tr>
+      <tr><td><b>FOB</b></td><td>A bordo do navio no porto de origem (já desembaraçado p/ exportar)</td><td>Frete int'l, seguro e importação no Brasil</td></tr>
+      <tr><td><b>CIF</b></td><td>Frete + seguro até o porto de destino</td><td>Importação / desembaraço no Brasil</td></tr>
+      <tr><td><b>DAP</b></td><td>Local combinado no destino (sua cidade/armazém)</td><td>Importação e impostos no Brasil</td></tr>
+      <tr><td><b>DDP</b></td><td>Sua porta, com impostos pagos</td><td>Praticamente nada</td></tr>
+    </tbody></table></div>
+    <div class="banner warn" style="margin-top:12px"><span>${ic('scale')}</span><span><b>Pela legislação brasileira:</b> o <b>valor aduaneiro</b> (base dos impostos) é sempre o <b>CIF</b> — FOB + frete + seguro — não importa o Incoterm negociado. E o <b>importador de registro</b> tem que ser uma <b>empresa brasileira habilitada no RADAR</b>. Por isso: <b>EXW, FOB, CIF e DAP</b> são viáveis (você importa no seu CNPJ e faz o desembaraço). Um <b>DDP de verdade</b> (fornecedor estrangeiro pagando os impostos) <b>não dá pra fazer legalmente</b> no seu nome — o que circula é o <b>“DDP/DAP cinza”</b> (importação informal, no CNPJ de terceiros, subfaturada): barato, mas sem nota/crédito e com <b>risco de apreensão e multa</b>. <b>Recomendado: FOB ou CIF</b>, importando no seu CNPJ.</span></div>`;
+  w.appendChild(inco);
+
   const bar=el('div','card pad');
   bar.innerHTML=`<label class="fld"><span>Buscar termo</span><input id="gQ" style="max-width:360px" placeholder="ex.: NCM, FOB, ICMS, demurrage..." value="${esc(glossQ)}"></label>`;
   w.appendChild(bar);

@@ -677,6 +677,7 @@ const TABS=[
   {id:"classificacao",label:"Classificação NCM",ic:"tags"},
   {id:"regime",label:"Regime tributário",ic:"scale"},
   {id:"holding",label:"Holding / Aluguéis",ic:"building-2"},
+  {id:"estrutura",label:"Estrutura & Sucessão",ic:"network"},
   {id:"calc",label:"Custo & viabilidade",ic:"calculator"},
   {id:"import",label:"Passo a passo",ic:"route"},
   {id:"intel",label:"Inteligência & DD",ic:"radar"},
@@ -1447,6 +1448,87 @@ function drawHolding(out){
   out.appendChild(cards);out.appendChild(insight);out.appendChild(tbl);
   applyGlossary(out);icons();
 }
+
+/* ============================ ESTRUTURA & SUCESSÃO ============================ */
+VIEWS.estrutura=()=>{
+  const w=el('div','panel-view');
+  w.appendChild(lead("network","Blindagem & planejamento","Estrutura societária, patrimônio e sucessão",
+    "Guia de apoio para organizar a empresa, proteger o patrimônio e planejar a sucessão. É orientação geral — as decisões (e os números) saem com contador e advogado."));
+  w.appendChild(banner('warn','triangle-alert','Conteúdo educativo e geral, não é consultoria. Regime de bens, ITBI, cláusulas de sucessão e o desenho do grupo dependem do seu caso concreto — feche com <b>advogado + contador</b>.'));
+
+  // 1. tipo de empresa
+  const c1=el('div','card pad');
+  c1.innerHTML=`<h3 style="font-size:16px;margin-bottom:4px;display:flex;align-items:center;gap:8px">${ic('building')} Tipo de empresa: EI × SLU × LTDA</h3>
+    <p style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px">A tributação é a mesma (depende do regime); a diferença é responsabilidade, sócios e sucessão.</p>
+    <div style="overflow-x:auto"><table class="taxtable"><thead><tr><th>&nbsp;</th><th>EI</th><th>SLU</th><th>LTDA</th></tr></thead><tbody>
+      <tr><td>Responsabilidade</td><td style="color:var(--bad)">Ilimitada</td><td style="color:var(--ok)">Limitada</td><td style="color:var(--ok)">Limitada</td></tr>
+      <tr><td>Sócios</td><td>Você (titular)</td><td>1 (só você)</td><td>2 ou mais</td></tr>
+      <tr><td>Sucessão por quotas</td><td>—</td><td class="mono">Não</td><td style="color:var(--ok)">Sim</td></tr>
+      <tr><td>Melhor para</td><td>—</td><td>Solo, controle total</td><td>Sócios / família / sucessão</td></tr>
+    </tbody></table></div>
+    <div class="banner info" style="margin-top:12px">${ic('lightbulb')}<span>Na <b>EI</b>, seus bens pessoais respondem pelas dívidas da empresa. Migrar para <b>SLU</b> (sozinho) ou <b>LTDA</b> (com sócios) cria <b>responsabilidade limitada</b> — a blindagem só cai em caso de fraude/confusão patrimonial.</span></div>`;
+  w.appendChild(c1);
+
+  // 2. proteção patrimonial
+  const c2=el('div','card pad');
+  c2.innerHTML=`<h3 style="font-size:16px;margin-bottom:8px;display:flex;align-items:center;gap:8px">${ic('shield-check')} Proteção do patrimônio</h3>
+    <ul class="deep-ul" style="font-size:13.5px">
+      <li><b>Bem de família (Lei 8.009/90):</b> a casa onde a família mora é <b>impenhorável automaticamente</b> — protegida da maioria das dívidas <b>sem precisar de holding</b>.</li>
+      <li><b>Exceções</b> (aí pode ser penhorada): imóvel dado em garantia (hipoteca), fiança de aluguel, pensão alimentícia, IPTU/condomínio do próprio imóvel, financiamento da compra.</li>
+      <li><b>Atenção:</b> o bem de família cobre só a <b>moradia</b>. Carro, outros imóveis e aplicações <b>respondem</b> pelas dívidas da EI — por isso a migração para SLU/LTDA importa.</li>
+    </ul>`;
+  w.appendChild(c2);
+
+  // 3. holding
+  const c3=el('div','card pad');
+  c3.innerHTML=`<h3 style="font-size:16px;margin-bottom:4px;display:flex;align-items:center;gap:8px">${ic('building-2')} Holding patrimonial — o que colocar</h3>
+    <div style="overflow-x:auto"><table class="taxtable"><thead><tr><th>Imóvel</th><th>Na holding?</th><th>Por quê</th></tr></thead><tbody>
+      <tr><td>Casas <b>alugadas</b> a terceiros</td><td style="color:var(--ok);font-weight:700">Sim</td><td>Troca ~27,5% (PF) por ~11–14% (PJ) sobre o aluguel</td></tr>
+      <tr><td>Barracão da empresa</td><td style="color:var(--warn);font-weight:700">Depende</td><td>Só economiza imposto <b>fora do Simples</b>; no Simples, só proteção/sucessão</td></tr>
+      <tr><td>Casa onde você mora</td><td style="color:var(--bad);font-weight:700">Não</td><td>Sem aluguel = sem ganho; perde bem de família e isenção de IR na venda</td></tr>
+    </tbody></table></div>
+    <div class="banner warn" style="margin-top:12px">${ic('triangle-alert')}<span><b>ITBI:</b> holding de locação costuma <b>perder a imunidade</b> na integralização → pode pagar ~2–3% do valor ao transferir o imóvel. Avalie com o município.</span></div>
+    <button class="btn ghost sm" id="goHold" style="margin-top:10px">${ic('calculator')} Abrir a calculadora PF × Holding</button>`;
+  w.appendChild(c3);
+
+  // 4. grupo & marca
+  const c4=el('div','card pad');
+  c4.innerHTML=`<h3 style="font-size:16px;margin-bottom:8px;display:flex;align-items:center;gap:8px">${ic('share-2')} Grupo & marca</h3>
+    <ul class="deep-ul" style="font-size:13.5px">
+      <li><b>CNPJs separados:</b> uma empresa para a <b>operação</b> (bolsas) e outra <b>holding</b> para os imóveis. <b>Não</b> misture um CNAE de aluguel no CNPJ das bolsas — isso acaba com a proteção e briga de regime.</li>
+      <li><b>Marca no INPI:</b> protege o nome nacionalmente (vale 10 anos, renovável). Confira a <b>classe</b> (bolsas = classe 18). Considere <b>ceder a marca a uma PJ</b> para blindar e facilitar sucessão.</li>
+      <li><b>Grupo econômico:</b> várias empresas suas sob a mesma marca podem gerar <b>responsabilidade solidária</b> (trabalhista/fiscal). Mantenha <b>contabilidade, conta bancária e contratos separados</b>, a preço de mercado.</li>
+    </ul>`;
+  w.appendChild(c4);
+
+  // 5. sucessão
+  const c5=el('div','card pad');
+  c5.innerHTML=`<h3 style="font-size:16px;margin-bottom:8px;display:flex;align-items:center;gap:8px">${ic('scroll')} Sucessão (herança)</h3>
+    <p style="font-size:13px;color:var(--ink-soft);margin-bottom:8px"><b>Ordem de quem herda</b> (CC art. 1829): 1º descendentes · 2º ascendentes (pais) · 3º <b>cônjuge sozinho</b> · 4º colaterais (irmãos/sobrinhos).</p>
+    <ul class="deep-ul" style="font-size:13.5px">
+      <li><b>Herdeiros necessários</b> (têm 50% reservado — a legítima): descendentes, ascendentes e <b>cônjuge</b>. Irmãos e sobrinhos <b>não</b> são necessários.</li>
+      <li>Sem filhos e sem pais vivos, o <b>cônjuge herda tudo</b> por lei — irmãos/sobrinhos ficam de fora. Para destinar algo a eles, é preciso <b>testamento</b> (até os 50% da parte disponível).</li>
+      <li><b>Cláusula de sucessão no contrato social</b> (SLU/LTDA): define se os herdeiros entram como sócios ou recebem o valor das quotas — evita a empresa travar no inventário.</li>
+      <li><b>Regime de bens (comunhão parcial):</b> o que você adquiriu <b>antes</b> do casamento é <b>particular</b> (não divide no divórcio); os <b>frutos/lucros</b> recebidos durante o casamento são <b>comuns</b>.</li>
+    </ul>`;
+  w.appendChild(c5);
+
+  // 6. checklist
+  const c6=el('div','card pad');
+  c6.innerHTML=`<h3 style="font-size:16px;margin-bottom:8px;display:flex;align-items:center;gap:8px">${ic('list-checks')} Levar pro advogado/contador</h3>
+    <ul class="deep-ul" style="font-size:13.5px">
+      <li>Avaliar transformar a <b>EI em SLU</b> (responsabilidade limitada).</li>
+      <li>Confirmar <b>regime de bens</b> e o que é particular × comum.</li>
+      <li>Decidir a <b>marca</b>: manter no CPF ou ceder a uma PJ (e checar a data do registro).</li>
+      <li>Desenhar a <b>holding</b> (SLU/LTDA, CNAE, ITBI) só quando o aluguel justificar.</li>
+      <li>Fazer <b>testamento</b> + <b>cláusula de sucessão</b> no contrato social.</li>
+      <li>Manter o <b>grupo separado</b> (contabilidade, contas, contratos a preço de mercado).</li>
+    </ul>`;
+  w.appendChild(c6);
+
+  c3.querySelector('#goHold').onclick=()=>go('holding');
+  return w;
+};
 
 /* ============================ CALCULADORA ============================ */
 const CALC_DEF={fob:6.80,qty:1000,freight:1800,insurance:120,rate:5.40,ii:35,ipi:6.5,pis:2.10,cofins:9.65,icms:18,afrmm:8,siscomex:154.23,desp:2500,markup:2.8};

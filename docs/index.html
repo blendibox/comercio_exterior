@@ -12,7 +12,8 @@
 <!-- ⚙️ CONFIG: troque pela URL do seu Worker após o deploy -->
 <script>
   window.BB_CONFIG = {
-    workerUrl: "https://blendibox-comex-api.blendibox.workers.dev"
+    workerUrl: "https://blendibox-comex-api.blendibox.workers.dev",
+    allowSignup: false   // true para reativar o botão "Cadastrar"
   };
   // tema (dark por padrão) aplicado cedo para evitar flash
   try{ document.documentElement.setAttribute('data-theme', localStorage.getItem('bb_theme') || 'dark'); }
@@ -635,6 +636,7 @@ const GKEY={}; GLOSSARY.forEach(g=>GKEY[g.t.toLowerCase()]=g.t);
 const CFG=window.BB_CONFIG||{};
 const WORKER=String(CFG.workerUrl||'').replace(/\/+$/,'');
 const CONFIGURED=/^https?:\/\//.test(WORKER) && !/SEU_|exemplo|example/i.test(WORKER);
+const ALLOW_SIGNUP=CFG.allowSignup===true;
 
 let authToken='',authUser='';
 try{authToken=localStorage.getItem('bb_token')||'';authUser=localStorage.getItem('bb_user')||'';}catch(e){}
@@ -879,6 +881,7 @@ VIEWS.suppliers=()=>{
 
 /* ---- telas de autenticação ---- */
 function authCard(){
+  if(!ALLOW_SIGNUP && authMode==='register') authMode='login';
   const c=el('div','card pad authwrap');
   const tab=(m,l)=>`<button class="authtab ${authMode===m?'on':''}" data-m="${m}">${l}</button>`;
   let form='';
@@ -899,7 +902,8 @@ function authCard(){
       <button class="btn primary" id="a_go">${ic('log-in')} Entrar</button>
       <button class="linkbtn" id="a_forgot">Esqueci minha senha</button>`;
   }
-  c.innerHTML=`<div class="authtabs">${tab('login','Entrar')}${tab('register','Cadastrar')}</div>
+  const tabsHtml=ALLOW_SIGNUP?`<div class="authtabs">${tab('login','Entrar')}${tab('register','Cadastrar')}</div>`:`<h3 style="font-size:17px;display:flex;align-items:center;gap:8px;margin-bottom:12px">${ic('lock')} Entrar na área da equipe</h3>`;
+  c.innerHTML=`${tabsHtml}
     ${authMsg?`<div class="authmsg ${authMsg.ok?'ok':'err'}">${esc(authMsg.text)}</div>`:''}
     <div class="authform">${form}</div>`;
   c.querySelectorAll('.authtab').forEach(b=>b.onclick=()=>{authMode=b.dataset.m;authMsg=null;render();});
